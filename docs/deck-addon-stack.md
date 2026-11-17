@@ -77,3 +77,11 @@ Default shaman stack: **forever-deck + Forever Totems**. Add TotemWatch *or* Int
 5. Optional: Details!, TotemWatch *or* InterHUD  
 
 **Reskin rule:** skin when the addon is MIT/friendly and a thin chrome pass reads as Immersion (Totems). Otherwise install for function and leave look, or **build the cue inside IF**.
+
+---
+
+## Execute
+
+1. **Install** this list on Deck (Spoken → RXP → DBM on top of All-forever); smoke Immersion + Totems + tracker.
+2. **Build next:** RXP path lines in `ImprovedForever_Map` (soft-dep `RXPGuides`, world-map gold polylines — see design notes in the fork docs / `restedxp-paths`). QuestTracker already syncs Blizzard waypoint.
+3. **Then optional:** Immersion Shock interrupt + OOC imbue/shield glance; DBM gold tint only if stock timers feel loud.
