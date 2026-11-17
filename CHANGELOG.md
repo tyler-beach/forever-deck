@@ -1,5 +1,11 @@
 # Changelog
 
+## Immersion 0.13.8 / Core 0.19.1 (tyler-beach)
+
+- **Spoken is optional** — Immersion no longer hard-depends on Spoken (not shipped in the forever zip). Missing Spoken used to block Immersion entirely → stuck on Blizzard’s radial gamepad bar.
+- Core: `/if immersion` / `/if immersion enable` diagnose and re-enable Immersion (+ reload). Login tip when Immersion isn’t loaded.
+- GamepadBar fades whole `GamepadMainActionBarFrame` when diamonds are on; Card band falls back without Spoken textures.
+
 ## Immersion 0.13.7 (tyler-beach)
 
 - `/if pad [on|off|status|diamond]` to re-enable Immersion spell diamonds if Blizzard’s radial gamepad bar is stuck showing.

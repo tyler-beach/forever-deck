@@ -185,4 +185,82 @@ loader:SetScript("OnEvent", function()
         IF.Print("Improved Forever: Gather is now Improved Forever: Minimap and has been turned off;"
             .. " remove it from your AddOns folder or CurseForge.")
     end
+    -- Deck: Immersion often stays off after a load abort, or never loads when Spoken
+    -- was a hard dep and wasn't installed. Tip once so the radial Blizzard bar makes sense.
+    do
+        local A = _G.C_AddOns
+        local name = "ImprovedForever_Immersion"
+        if A and A.DoesAddOnExist and A.DoesAddOnExist(name)
+            and A.IsAddOnLoaded and not A.IsAddOnLoaded(name) then
+            IF.Print("Immersion is not loaded (Blizzard gamepad bar stays). /if immersion")
+        end
+    end
 end)
+
+---------------------------------------------------------------------------
+-- /if immersion [status|enable]: why diamonds are missing; enable + reload
+---------------------------------------------------------------------------
+local function AddonState(name)
+    local A = _G.C_AddOns
+    if not (A and A.DoesAddOnExist) then return "no C_AddOns" end
+    if not A.DoesAddOnExist(name) then return "missing (not installed)" end
+    local loaded = A.IsAddOnLoaded and A.IsAddOnLoaded(name)
+    if loaded then return "loaded" end
+    local enabled
+    if A.GetAddOnEnableState then
+        -- 0 = disabled, 1/2 = enabled for some/all characters (API varies by client)
+        local ok, state = pcall(A.GetAddOnEnableState, name, UnitName("player"))
+        if not ok then ok, state = pcall(A.GetAddOnEnableState, UnitName("player"), name) end
+        if ok and type(state) == "number" then enabled = state > 0 end
+    end
+    if enabled == false then return "installed, DISABLED at character select" end
+    local reason
+    if A.GetAddOnMetadata then
+        -- LoadReason / reason string when enable fails (missing dep)
+        local ok, why = pcall(function()
+            if A.IsAddOnLoadOnDemand then
+                -- GetAddOnInfo returns reason as 5th/6th depending on client
+            end
+            local info = { A.GetAddOnInfo(name) }
+            return info[5] or info[6]
+        end)
+        if ok and type(why) == "string" and why ~= "" and why ~= "ENABLED" then reason = why end
+    end
+    if reason then return "installed, not loaded (" .. reason .. ")" end
+    return "installed, not loaded"
+end
+
+IF.AddCommand("immersion", function(args)
+    local sub = args[1] and args[1]:lower() or "status"
+    local A = _G.C_AddOns
+    local name = "ImprovedForever_Immersion"
+    if sub == "enable" or sub == "on" or sub == "fix" then
+        if not (A and A.DoesAddOnExist and A.DoesAddOnExist(name)) then
+            return IF.Print("Immersion folder missing - update forever-deck (All-forever zip).")
+        end
+        if A.EnableAddOn then
+            pcall(A.EnableAddOn, name)
+            pcall(A.EnableAddOn, UnitName("player"), name)
+        end
+        -- Soft-dep now, but enable Spoken too when present so VO works.
+        if A.DoesAddOnExist("Spoken") and A.EnableAddOn then
+            pcall(A.EnableAddOn, "Spoken")
+            pcall(A.EnableAddOn, UnitName("player"), "Spoken")
+        end
+        if A.DoesAddOnExist("ImprovedForever_Journal") and A.EnableAddOn then
+            pcall(A.EnableAddOn, "ImprovedForever_Journal")
+            pcall(A.EnableAddOn, UnitName("player"), "ImprovedForever_Journal")
+        end
+        IF.Print("Immersion enabled. Reloading...")
+        if ReloadUI then ReloadUI() end
+        return
+    end
+    IF.Print("Immersion: " .. AddonState(name))
+    IF.Print("Journal: " .. AddonState("ImprovedForever_Journal"))
+    IF.Print("Spoken (optional): " .. AddonState("Spoken"))
+    if IF.Interface and IF.Interface.GamepadBar then
+        IF.Print("GamepadBar loaded. /if pad status - /if pad diamond")
+    else
+        IF.Print("Diamonds need Immersion loaded. /if immersion enable")
+    end
+end, "[status|enable]: Immersion load state; enable + /reload for spell diamonds")

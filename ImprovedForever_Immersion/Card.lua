@@ -23,6 +23,9 @@ local OBJECT_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 local SPOKEN_BAND = "Interface\\AddOns\\Spoken\\Textures\\SubtitleBand"
 local BAND_REACH, BAND_TOP_ROWS, BAND_BOTTOM_ROWS = 40, 28 / 64, 8 / 64
 local BAND_TOP_FADE, BAND_BOTTOM_FADE = 40, 12
+local function SpokenBandReady()
+    return C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("Spoken")
+end
 
 local Card = {}
 Card.__index = Card
@@ -56,29 +59,35 @@ function Card.New(name, opts)
     self.line = line
     self:SetTint(G)
 
-    -- (Spoken's band, as the NPC dialog draws it (NpcDialog.lua): its texture is 64 high, its top 28 rows
-    -- a fade in, its last 8 a fade out; the fades kept this high however tall ours is)
+    -- (Spoken's band when Spoken is installed; else a plain dark fill so Immersion
+    -- still loads without Spoken as a hard dependency)
     local band = CreateFrame("Frame", nil, panel)
     band:SetPoint("TOPLEFT", -BAND_REACH, 10)
     band:SetPoint("BOTTOMRIGHT", BAND_REACH, -4)
     band:SetFrameLevel(math.max(0, panel:GetFrameLevel() - 1))
-    local function Slice(top, bottom)
-        local t = band:CreateTexture(nil, "BACKGROUND")
-        t:SetTexture(SPOKEN_BAND)
-        t:SetTexCoord(0, 1, top, bottom)
-        return t
+    if SpokenBandReady() then
+        local function Slice(top, bottom)
+            local t = band:CreateTexture(nil, "BACKGROUND")
+            t:SetTexture(SPOKEN_BAND)
+            t:SetTexCoord(0, 1, top, bottom)
+            return t
+        end
+        local head = Slice(0, BAND_TOP_ROWS)
+        head:SetPoint("TOPLEFT")
+        head:SetPoint("TOPRIGHT")
+        head:SetHeight(BAND_TOP_FADE)
+        local foot = Slice(1 - BAND_BOTTOM_ROWS, 1)
+        foot:SetPoint("BOTTOMLEFT")
+        foot:SetPoint("BOTTOMRIGHT")
+        foot:SetHeight(BAND_BOTTOM_FADE)
+        local middle = Slice(BAND_TOP_ROWS, 1 - BAND_BOTTOM_ROWS)
+        middle:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
+        middle:SetPoint("BOTTOMRIGHT", foot, "TOPRIGHT")
+    else
+        local fill = band:CreateTexture(nil, "BACKGROUND")
+        fill:SetAllPoints()
+        fill:SetColorTexture(0, 0, 0, 0.55)
     end
-    local head = Slice(0, BAND_TOP_ROWS)
-    head:SetPoint("TOPLEFT")
-    head:SetPoint("TOPRIGHT")
-    head:SetHeight(BAND_TOP_FADE)
-    local foot = Slice(1 - BAND_BOTTOM_ROWS, 1)
-    foot:SetPoint("BOTTOMLEFT")
-    foot:SetPoint("BOTTOMRIGHT")
-    foot:SetHeight(BAND_BOTTOM_FADE)
-    local middle = Slice(BAND_TOP_ROWS, 1 - BAND_BOTTOM_ROWS)
-    middle:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
-    middle:SetPoint("BOTTOMRIGHT", foot, "TOPRIGHT")
     self.band = band
     -- (an arrow on the diamond, the game's upgrade arrow (the bags' item upgrade one): a buff's up in
     -- green, a debuff's down in red, drifting a little the way it points, over and over)

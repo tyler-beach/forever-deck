@@ -52,7 +52,7 @@ the core, **Improved Forever**:
 | `ImprovedForever_Journal` | A diary of your days, read as a book. |
 | `ImprovedForever_Fishing` | Fishing from the controller: fishing mode, a cast bar of its own, the session's stringer, the Fish Collection. |
 | `ImprovedForever_Camp` | Sitting by a campfire as a cutscene: the HUD gone, black bars, the camera cutting between shots round you, your day told back from the Journal, the camp's benefits when they come, what's said near you as subtitles. |
-| `ImprovedForever_Immersion` | The game's HUD made immersive: the target's health across the top, yours bottom left in the same look in a ring of your experience, your health and power as lines along the bottom edge, your pet and party as cards, the gamepad bar as Hogwarts Legacy's spell diamonds bottom right, the chat as just its lines until used. Needs Journal and Spoken. |
+| `ImprovedForever_Immersion` | The game's HUD made immersive: the target's health across the top, yours bottom left in the same look in a ring of your experience, your health and power as lines along the bottom edge, your pet and party as cards, the gamepad bar as Hogwarts Legacy's spell diamonds bottom right, the chat as just its lines until used. Needs Journal; Spoken optional (VO). |
 | `ImprovedForever_QuestTracker` | The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), **RestedXP guide steps** (leveling / profession / dungeon / legacy modules) when `RXPGuides` is loaded (soft dep), an objective complete sound, full controller support. Formerly Improved Quest Tracker. |
 
 ## Features
@@ -178,7 +178,7 @@ Full list + IF reskin notes: [`docs/deck-addon-stack.md`](docs/deck-addon-stack.
 | Addon | Role | In All pack? | Align with IF |
 |---|---|---|---|
 | **forever-deck** (this pack) | Immersion HUD + modules + Forever Totems | **Yes** | Native look |
-| [Spoken](https://www.curseforge.com/wow/addons/spoken) (+ optional Spoken Quests) | Voice / textures Immersion needs | No | Required dep — not a skin target |
+| [Spoken](https://www.curseforge.com/wow/addons/spoken) (+ optional Spoken Quests) | Voice / textures Immersion uses | No | Optional as of 0.13.8 (recommended for VO) |
 | [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling / profession / dungeon / legacy routes | No | Soft-dep: Quest Tracker + nameplate highlights + **Map path lines** (`/if path`) |
 | [DBM-Core](https://www.curseforge.com/wow/addons/deadly-boss-mods) + [Forever/Vanilla mods](https://www.curseforge.com/wow/addons/dbm-vanilla) | Dungeon / raid alerts | No | Leave stock; optional later gold timer skin |
 | **Forever Totems** (vendored) | Shaman totem bar / Call sets / macros | **Yes** — MIT from [bverger/ForeverTotems](https://github.com/bverger/ForeverTotems) | Immersion chrome baked in |

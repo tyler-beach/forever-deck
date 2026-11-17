@@ -15,7 +15,7 @@ That zip already includes every `ImprovedForever*` module **and** vendored **For
 | Addon | Role | Install | Align with IF |
 |---|---|---|---|
 | **forever-deck** (this pack) | Immersion HUD, Wheel, Quest Tracker, Map, Junk, … + Forever Totems | WoWDeck / All-forever zip | **Native** — this *is* the look |
-| [**Spoken**](https://www.curseforge.com/wow/addons/spoken) | NPC / quest voice + textures Immersion uses | CurseForge (Forever flavor) | **Required** by Immersion (not a skin target) |
+| [**Spoken**](https://www.curseforge.com/wow/addons/spoken) | NPC / quest voice + textures Immersion uses | CurseForge (Forever flavor) | **Optional** as of Immersion 0.13.8 (was a hard dep; without it Immersion refused to load → Blizzard radial bar). Still recommended for VO. |
 | [**Spoken Quests**](https://www.curseforge.com/wow/addons/spoken-quests) *(optional)* | Extra quest VO | CurseForge | Soft-dep of Immersion |
 | [**RXPGuides**](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling / profession / dungeon / legacy routes | CurseForge + Forever packs / `/rxp import` | **Soft-dep done:** Quest Tracker + nameplate highlights + Map gold path lines (`/if path`) |
 

@@ -1894,12 +1894,16 @@ local function Watch()
     local pu = PageUnit()
     local main = GamepadMainActionBarFrame
     local wanted = IN.Settings().pad and not UF.EditMode()
-    local gamepadUI = pu ~= nil and main:IsVisible()
+    local gamepadUI = pu ~= nil and main ~= nil and main:IsVisible()
     local on = wanted and gamepadUI
     -- (the keyboard and mouse bar: the game's main bar, shown instead of
     -- the pad's while the Gamepad UI is off)
     local keyBar = _G.MainActionBar
     local keys = wanted and not gamepadUI and keyBar ~= nil and keyBar:IsVisible()
+    -- Also fade the whole GamepadMain chrome (Forever layout changes can leave
+    -- radial pieces outside NativeParts). Cover stays on the bars only so our
+    -- diamonds keep the mouse.
+    if main then IF.Focus.Fade(main, on) end
     if pu then
         for _, part in ipairs(NativeParts(pu)) do IF.Focus.Fade(part, on) end
         for _, bar in ipairs(NativeBars(pu)) do UF.Cover(bar, on) end
