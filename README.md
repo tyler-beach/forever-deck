@@ -171,14 +171,21 @@ This fork feeds **RestedXP** guide kinds into `ImprovedForever_QuestTracker` as 
 
 Slash: `/if quests rxp [on\|off\|profession\|dungeon\|legacy\|waypoint\|focus\|debug]`.
 
-## Companion addons
+## Deck recommended stack
 
-| Addon | Role | In All pack? | IF hook |
+Full list + IF reskin notes: [`docs/deck-addon-stack.md`](docs/deck-addon-stack.md).
+
+| Addon | Role | In All pack? | Align with IF |
 |---|---|---|---|
-| [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling routes | No — install separately | Quest Tracker modules + nameplate highlights |
-| **Forever Totems** (vendored) | Shaman totem bar / Call sets / macros (best gamepad fit) | **Yes** — `ForeverTotems/` from [bverger/ForeverTotems](https://github.com/bverger/ForeverTotems) (MIT, see `ForeverTotems/VENDOR.md`) | Immersion chrome baked in; optional Immersion → Totems → **Skin Forever Totems** |
+| **forever-deck** (this pack) | Immersion HUD + modules + Forever Totems | **Yes** | Native look |
+| [Spoken](https://www.curseforge.com/wow/addons/spoken) (+ optional Spoken Quests) | Voice / textures Immersion needs | No | Required dep — not a skin target |
+| [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling / profession / dungeon / legacy routes | No | Soft-dep: Quest Tracker + nameplate highlights; **path lines** still to build in IF |
+| [DBM-Core](https://www.curseforge.com/wow/addons/deadly-boss-mods) + [Forever/Vanilla mods](https://www.curseforge.com/wow/addons/dbm-vanilla) | Dungeon / raid alerts | No | Leave stock; optional later gold timer skin |
+| **Forever Totems** (vendored) | Shaman totem bar / Call sets / macros | **Yes** — MIT from [bverger/ForeverTotems](https://github.com/bverger/ForeverTotems) | Immersion chrome baked in |
+| Details! *(optional)* | Meters | No | Leave stock |
+| TotemWatch *or* ShamanForever/InterHUD *(optional)* | Extra shaman depth | No | Leave stock / don’t double with Totems |
 
-Manual install of the All zip drops `ForeverTotems` next to the `ImprovedForever*` folders.
+**Skip:** TomTom, Plater, ElvUI/Bartender, Classic TotemTimers — IF or Forever Totems already cover those jobs.
 
 ## Development
 

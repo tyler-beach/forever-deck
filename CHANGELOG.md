@@ -1,5 +1,9 @@
 # Changelog
 
+## Docs (tyler-beach)
+
+- Deck recommended addon stack: `docs/deck-addon-stack.md` + README table (Spoken, RXP, DBM, Totems, what to skip / reskin).
+
 ## Forever Totems 1.1.0 (tyler-beach)
 
 - **Vendored** [bverger/ForeverTotems](https://github.com/bverger/ForeverTotems) @ `d042ace` (MIT) into this repo as `ForeverTotems/`.
