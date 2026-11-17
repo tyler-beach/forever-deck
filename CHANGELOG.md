@@ -1,5 +1,9 @@
 # Changelog
 
+## Immersion 0.13.3 (tyler-beach)
+
+- Soft-dep **Forever Totems** skin: Immersion gold edges, diamond-cut icons, Morpheus timers on their bar (install Forever Totems separately). Toggle: Immersion → Bottom → Totems → Skin Forever Totems.
+
 ## Immersion 0.13.2 (tyler-beach)
 
 - **Highlight RestedXP targets** on Immersion nameplates (soft-dep `RXPGuides`): current-step talk-to NPCs in bright gold with a quest icon, kill targets in warm orange, full plate weight so they read in a crowd.

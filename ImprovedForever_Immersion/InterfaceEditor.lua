@@ -396,6 +396,14 @@ local ITEMS = {
             .. "party cards, written into your Edit Mode layout once.",
     }, Toggle("hudAuras", "Buffs along the bottom (experiment)", function() IN.HudLayout.Apply() end)),
     Item({
+        key = "foreverTotemsSkin", group = "bottom", section = "Totems", label = "Skin Forever Totems",
+        tip = "When Forever Totems is installed, restyle its bar to Immersion: gold edges, diamond-cut "
+            .. "icons, Morpheus timers. Soft dependency — install Forever Totems from CurseForge "
+            .. "(bverger); we do not bundle it. Off leaves their default look.",
+    }, Toggle("foreverTotemsSkin", "Skin Forever Totems", function()
+        if IN.ForeverTotemsSkin and IN.ForeverTotemsSkin.Apply then IN.ForeverTotemsSkin.Apply() end
+    end)),
+    Item({
         key = "buffTimeline", group = "bottom", section = "Buffs & cooldowns", label = "Buff row",
         tip = "Your buffs and debuffs as a row along the bottom: round icons with the time left, soonest "
             .. "gone nearest the middle. Replaces the game's buffs (Edit Mode shows them).",

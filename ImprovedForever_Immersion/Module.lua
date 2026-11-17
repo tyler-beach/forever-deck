@@ -134,6 +134,7 @@ local DEFAULTS = {
     hideAuraTip = true, -- on the pad, the game's own buff tooltip (shown by itself) drawn at 0 (Tooltip.lua)
     auraNotice = true,  -- a buff or debuff you gain announced as a card left of your character (AuraNotice.lua)
     nameplateRXP = true, -- RestedXP step targets: bright Immersion plates + quest icon (Nameplates.lua; soft-dep RXPGuides)
+    foreverTotemsSkin = true, -- Immersion gold/diamond skin on Forever Totems bar (ForeverTotemsSkin.lua; soft-dep)
     spellTracker = true, -- your chosen spells as cards right of your character: on cooldown, or their buff used up (SpellTracker.lua)
     tooltipOurs = true, -- the world tooltip drawn as ours, fading in right of your character (Tooltip.lua)
     questPeek = true,   -- the tracked quests as tooltip rows at the top left in place of the quest tracker; swipe the touchpad left to right to open the focused one (QuestPeek.lua)

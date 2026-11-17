@@ -170,6 +170,15 @@ This fork feeds **RestedXP** guide kinds into `ImprovedForever_QuestTracker` as 
 
 Slash: `/if quests rxp [on\|off\|profession\|dungeon\|legacy\|waypoint\|focus\|debug]`.
 
+## Companion addons (soft-dep skins)
+
+Install separately via WoWDeck / CurseForge — this fork does **not** bundle them:
+
+| Addon | Role | IF hook |
+|---|---|---|
+| [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling routes | Quest Tracker modules + nameplate highlights |
+| [Forever Totems](https://www.curseforge.com/wow/addons/forever-totems) | Shaman totem bar / Call sets / macros (best gamepad fit) | Immersion → Totems → **Skin Forever Totems** (gold / diamond chrome) |
+
 ## Development
 
 One repo, one folder per addon (`ImprovedForever/` the core, `ImprovedForever_<Module>/` each module).
