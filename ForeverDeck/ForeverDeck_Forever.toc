@@ -2,7 +2,7 @@
 ## Title: Forever Deck
 ## Notes: Compact Blizzard-native Steam Deck HUD for WoW Forever, plus RestedXP path hooks and Shaman PvE stubs.
 ## Author: tyler-beach
-## Version: 0.1.0
+## Version: 0.2.0
 ## SavedVariables: ForeverDeckDB
 ## OptionalDeps: RestedXP
 ## X-Client: Forever
