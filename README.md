@@ -39,7 +39,7 @@ the core, **Improved Forever**:
 | `ImprovedForever_Fishing` | Fishing from the controller: fishing mode, a cast bar of its own, the session's stringer, the Fish Collection. |
 | `ImprovedForever_Camp` | Sitting by a campfire as a cutscene: the HUD gone, black bars, the camera cutting between shots round you, your day told back from the Journal, the camp's benefits when they come, what's said near you as subtitles. |
 | `ImprovedForever_Immersion` | The game's HUD made immersive: the target's health across the top, yours bottom left in the same look in a ring of your experience, your health and power as lines along the bottom edge, your pet and party as cards, the gamepad bar as Hogwarts Legacy's spell diamonds bottom right, the chat as just its lines until used. Needs Journal and Spoken. |
-| `ImprovedForever_QuestTracker` | The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), an objective complete sound, full controller support. Formerly Improved Quest Tracker. |
+| `ImprovedForever_QuestTracker` | The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), **RestedXP guide steps** when `RXPGuides` is loaded (soft dep), an objective complete sound, full controller support. Formerly Improved Quest Tracker. |
 
 ## Features
 
@@ -114,6 +114,22 @@ The layout is Steam's stock PS5 gamepad one with only the touchpad changed. Nump
 are taken by the addon in the world while it runs. Each half of the pad has four areas
 (top, right, bottom, left), so a click near the middle of a half can land in the other corner
 of that half.
+
+## RestedXP guide steps (Quest Tracker)
+
+This tyler-beach fork feeds **RestedXP Forever** active steps into `ImprovedForever_QuestTracker`
+as a first-class objective-tracker module (`Tracker/RXPGuideObjectiveTracker.*`).
+
+| Behavior | Detail |
+|---|---|
+| Soft dependency | `## OptionalDeps: RXPGuides` — addon loads cleanly if RestedXP is missing |
+| Placement | RXP blocks render **above** Blizzard quest watches (primary when a guide is active); stock watches are unchanged |
+| Data source | `RXPFrame.activeSteps` + optional `RXPG_ARROW.element` (same internals other bridges use) |
+| Waypoint sync | Optional Blizzard user waypoint from the RXP arrow (gamepad-friendly Forever nav) |
+| Quest focus | Optional SuperTrack when a step exposes `questId` already in the log (off by default) |
+| Gamepad | Blizzard quest rows keep the existing pad-focus mirror; RXP blocks are visual / mouse (no synthetic quest cache writes) |
+
+Slash: `/if quests rxp [on\|off]`, `/if quests rxp waypoint [on\|off]`, `/if quests rxp focus [on\|off]`, `/if quests rxp debug`.
 
 ## Development
 

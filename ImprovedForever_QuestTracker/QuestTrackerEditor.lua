@@ -57,11 +57,27 @@ local ITEMS = {
         tip = "Plays a sound when an objective of a tracked quest completes.",
     }, OnOff(function() return IQT.Settings().objectiveSound end,
         function(on) IQT.SetObjectiveSound(on) end, "Objective sound")),
+    Item({
+        key = "rxpGuide", group = "rxp", label = "RestedXP guide steps",
+        tip = "When RXPGuides is loaded, show its active guide steps as tracker blocks above Blizzard quest watches. Soft dependency: safe if RestedXP is missing.",
+    }, OnOff(function() return IQT.Settings().rxpGuide end,
+        function(on) IQT.SetRXPGuide(on) end, "RestedXP guide steps")),
+    Item({
+        key = "rxpWaypoint", group = "rxp", label = "Sync Blizzard waypoint",
+        tip = "Mirror the RestedXP arrow target into the Blizzard user waypoint so Forever gamepad navigation points at the same place.",
+    }, OnOff(function() return IQT.Settings().rxpWaypoint end,
+        function(on) IQT.SetRXPWaypoint(on) end, "RestedXP waypoint sync")),
+    Item({
+        key = "rxpQuestFocus", group = "rxp", label = "SuperTrack matching quest",
+        tip = "When an RXP step exposes a questId that is in your log, SuperTrack that quest so Immersion / quest focus stay aligned. Off by default to avoid fighting manual focus.",
+    }, OnOff(function() return IQT.Settings().rxpQuestFocus end,
+        function(on) IQT.SetRXPQuestFocus(on) end, "RestedXP quest SuperTrack")),
 }
 
 local GROUPS = {
     { key = "sort", label = "Sorting" },
     { key = "sound", label = "Sound" },
+    { key = "rxp", label = "RestedXP" },
 }
 
 IF.QuestTrackerEditor = IF.SettingsPage({ key = "quests", label = "Quest Tracker", module = "quests", order = 45 },

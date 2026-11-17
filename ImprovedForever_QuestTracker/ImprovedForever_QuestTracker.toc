@@ -1,15 +1,15 @@
 ## Interface: 16001, 16002, 16003, 16100, 16101, 16200
 ## Title: Improved Forever: Quest Tracker
-## Notes: The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), an objective complete sound, full controller support.
+## Notes: The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), RestedXP guide steps when RXPGuides is loaded, an objective complete sound, full controller support.
 ## Author: markg
-## Version: 0.6.6
-## X-Website: https://github.com/markgravity/ImprovedForever
+## Version: 0.6.7
+## X-Website: https://github.com/tyler-beach/ImprovedForever
 ## X-License: MIT
 ## X-Curse-Project-ID: 1736883
 ## IconTexture: Interface\AddOns\ImprovedForever\textures\ic_mod_quests
 ## Group: ImprovedForever
 ## Dependencies: ImprovedForever
-## OptionalDeps: Blizzard_ObjectiveTracker
+## OptionalDeps: Blizzard_ObjectiveTracker, RXPGuides
 
 Core.lua
 Sort.lua
@@ -54,6 +54,8 @@ Tracker/Blizzard_WorldQuestObjectiveTracker.lua
 Tracker/Blizzard_WorldQuestObjectiveTracker.xml
 Tracker/Blizzard_InitiativeTasksObjectiveTracker.lua
 Tracker/Blizzard_InitiativeTasksObjectiveTracker.xml
+Tracker/RXPGuideObjectiveTracker.lua
+Tracker/RXPGuideObjectiveTracker.xml
 Tracker/Blizzard_ObjectiveTracker.lua
 Tracker/PatchEarly.lua
 Tracker/Blizzard_ObjectiveTracker.xml

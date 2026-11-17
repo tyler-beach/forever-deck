@@ -1,5 +1,13 @@
 # Changelog
 
+## Quest Tracker 0.6.7 (tyler-beach)
+
+- RestedXP bridge: active `RXPGuides` steps appear as objective-tracker blocks above Blizzard quest watches (`Tracker/RXPGuideObjectiveTracker`).
+- Soft dependency on `RXPGuides` with clear chat errors when missing or when `RXPFrame.activeSteps` is unavailable.
+- Optional Blizzard user-waypoint sync from `RXPG_ARROW`; optional quest SuperTrack when a step exposes `questId` (off by default).
+- Settings tab group **RestedXP** and `/if quests rxp …` slash commands.
+- Stock Blizzard quest watches are unchanged.
+
 ## Immersion 0.13.0
 
 - Party casting: pick each slot's spell in the settings, under Party spells (or drag one onto a slot).

@@ -37,12 +37,22 @@ local function PrintStatus()
 	IQT.Print("/if quests menu - open the sort menu (also bindable in Key Bindings > AddOns)")
 	IQT.Print("/if quests debug - list tracked quests and whether the tracker shows them")
 	IQT.Print("/if quests debug rows - toggle each quest's place and distance on its header")
+	IQT.Print("/if quests rxp [on|off] - show RestedXP guide steps in the tracker")
+	IQT.Print("/if quests rxp waypoint [on|off] - sync Blizzard user waypoint to RXP arrow")
+	IQT.Print("/if quests rxp focus [on|off] - SuperTrack matching quest when RXP exposes questId")
+	IQT.Print("/if quests rxp debug - RestedXP bridge status")
 	IQT.Print("Or use the filter button on the Quests header, or the Quest Tracker tab (/if).")
+end
+
+local function ParseOnOff(arg, current)
+	if arg == "on" or arg == "1" or arg == "true" then return true end
+	if arg == "off" or arg == "0" or arg == "false" then return false end
+	return not current
 end
 
 -- /if quests <command> (the words after "quests")
 ImprovedForever.AddCommand("quests", function(args)
-	local cmd, arg = args[1] or "", args[2]
+	local cmd, arg, arg2 = args[1] or "", args[2], args[3]
 	if cmd == "sort" and SORT_ALIASES[arg or ""] then
 		IQT.SetSort(SORT_ALIASES[arg])
 		PrintStatus()
@@ -54,6 +64,19 @@ ImprovedForever.AddCommand("quests", function(args)
 		IQT.Print("debug rows " .. (IQT.debugRows and "on" or "off"))
 	elseif cmd == "debug" then
 		IQT.Debug()
+	elseif cmd == "rxp" then
+		local db = IQT.Settings()
+		if arg == "debug" then
+			IQT.RXPDebug()
+		elseif arg == "waypoint" then
+			IQT.SetRXPWaypoint(ParseOnOff(arg2, db.rxpWaypoint))
+		elseif arg == "focus" then
+			IQT.SetRXPQuestFocus(ParseOnOff(arg2, db.rxpQuestFocus))
+		elseif arg == "on" or arg == "off" or arg == nil or arg == "" then
+			IQT.SetRXPGuide(ParseOnOff(arg, db.rxpGuide))
+		else
+			IQT.Print("usage: /if quests rxp [on|off|waypoint|focus|debug]")
+		end
 	elseif cmd == "menu" then
 		ImprovedForever_ToggleQuestSort()
 	elseif cmd == "sound" then
@@ -71,4 +94,4 @@ ImprovedForever.AddCommand("quests", function(args)
 		end
 		PrintStatus()
 	end
-end, "[sort|completed|zonefirst|focus|sound|menu|debug]: the quest tracker's sorting")
+end, "[sort|completed|zonefirst|focus|sound|menu|debug|rxp]: the quest tracker's sorting and RestedXP bridge")
