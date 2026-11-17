@@ -17,7 +17,7 @@ That zip already includes every `ImprovedForever*` module **and** vendored **For
 | **forever-deck** (this pack) | Immersion HUD, Wheel, Quest Tracker, Map, Junk, … + Forever Totems | WoWDeck / All-forever zip | **Native** — this *is* the look |
 | [**Spoken**](https://www.curseforge.com/wow/addons/spoken) | NPC / quest voice + textures Immersion uses | CurseForge (Forever flavor) | **Required** by Immersion (not a skin target) |
 | [**Spoken Quests**](https://www.curseforge.com/wow/addons/spoken-quests) *(optional)* | Extra quest VO | CurseForge | Soft-dep of Immersion |
-| [**RXPGuides**](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling / profession / dungeon / legacy routes | CurseForge + Forever packs / `/rxp import` | **Soft-dep done:** Quest Tracker blocks + Immersion nameplate highlights. **Next:** IF path lines on map (build, don’t skin TomTom) |
+| [**RXPGuides**](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling / profession / dungeon / legacy routes | CurseForge + Forever packs / `/rxp import` | **Soft-dep done:** Quest Tracker + nameplate highlights + Map gold path lines (`/if path`) |
 
 ---
 
@@ -61,7 +61,7 @@ Default shaman stack: **forever-deck + Forever Totems**. Add TotemWatch *or* Int
 
 | Build | Why |
 |---|---|
-| **RXP path lines** (Map / QuestTracker soft-dep) | Thick OLED path player → current → next — unique gap |
+| ~~**RXP path lines**~~ | **Shipped** in Map 0.8.0 — `/if path`, Map → RestedXP path |
 | **Shaman glance** (optional) | Earth Shock interrupt flash + OOC imbue/shield prep as Immersion cards |
 | **Shared chrome helpers** | One diamond/gold toolkit for future soft-dep skins (e.g. DBM bars) |
 | **DBM bar tint** (optional, later) | Only if stock timers feel visually loud on Deck |
@@ -83,5 +83,5 @@ Default shaman stack: **forever-deck + Forever Totems**. Add TotemWatch *or* Int
 ## Execute
 
 1. **Install** this list on Deck (Spoken → RXP → DBM on top of All-forever); smoke Immersion + Totems + tracker.
-2. **Build next:** RXP path lines in `ImprovedForever_Map` (soft-dep `RXPGuides`, world-map gold polylines — see design notes in the fork docs / `restedxp-paths`). QuestTracker already syncs Blizzard waypoint.
+2. ~~**Build path lines**~~ — Map 0.8.0 (`RXPPath.lua`). Open world map with an RXP step; `/if path debug`.
 3. **Then optional:** Immersion Shock interrupt + OOC imbue/shield glance; DBM gold tint only if stock timers feel loud.

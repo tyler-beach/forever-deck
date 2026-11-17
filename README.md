@@ -179,7 +179,7 @@ Full list + IF reskin notes: [`docs/deck-addon-stack.md`](docs/deck-addon-stack.
 |---|---|---|---|
 | **forever-deck** (this pack) | Immersion HUD + modules + Forever Totems | **Yes** | Native look |
 | [Spoken](https://www.curseforge.com/wow/addons/spoken) (+ optional Spoken Quests) | Voice / textures Immersion needs | No | Required dep — not a skin target |
-| [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling / profession / dungeon / legacy routes | No | Soft-dep: Quest Tracker + nameplate highlights; **path lines** still to build in IF |
+| [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling / profession / dungeon / legacy routes | No | Soft-dep: Quest Tracker + nameplate highlights + **Map path lines** (`/if path`) |
 | [DBM-Core](https://www.curseforge.com/wow/addons/deadly-boss-mods) + [Forever/Vanilla mods](https://www.curseforge.com/wow/addons/dbm-vanilla) | Dungeon / raid alerts | No | Leave stock; optional later gold timer skin |
 | **Forever Totems** (vendored) | Shaman totem bar / Call sets / macros | **Yes** — MIT from [bverger/ForeverTotems](https://github.com/bverger/ForeverTotems) | Immersion chrome baked in |
 | Details! *(optional)* | Meters | No | Leave stock |

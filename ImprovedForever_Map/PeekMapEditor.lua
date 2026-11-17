@@ -58,6 +58,10 @@ local function Offset(key, negative, positive)
     }
 end
 
+local function P()
+    return IF.RXPPath.Settings()
+end
+
 local ITEMS = {
     Item({
         key = "alpha", group = "look", label = "Opacity",
@@ -102,10 +106,62 @@ local ITEMS = {
         tip = "Moves the map from its position, by a share of the screen's height.",
         slider = Offset("y", "Down", "Up"),
     },
+    Item({
+        key = "rxpPath", group = "rxp", label = "RestedXP path lines",
+        tip = "Thick Immersion-gold lines on the world map for the current RestedXP step (player → target, "
+            .. "and same-zone gotos when the guide has no .line segments). Soft-dep RXPGuides. "
+            .. "/if path debug. Quest Tracker's Blizzard waypoint sync is separate.",
+    }, OnOff(function() return P().enabled end, function(on)
+        P().enabled = on
+        IF.RXPPath.Apply()
+    end, "RestedXP path lines")),
+    Item({
+        key = "rxpPathPlayer", group = "rxp", label = "Player to target",
+        tip = "Include a line from you to the RestedXP arrow target when the open map is that zone.",
+    }, OnOff(function() return P().playerToTarget end, function(on)
+        P().playerToTarget = on
+        IF.RXPPath.Apply()
+    end, "Player to target")),
+    Item({
+        key = "rxpPathSynth", group = "rxp", label = "Connect gotos",
+        tip = "When the step has no RXP .line segments, connect discrete same-zone gotos (and a short lookahead).",
+    }, OnOff(function() return P().synthesize end, function(on)
+        P().synthesize = on
+        IF.RXPPath.Apply()
+    end, "Connect gotos")),
+    Item({
+        key = "rxpPathForce", group = "rxp", label = "Force IF style",
+        tip = "Draw IF gold paths even when RXP already drew .line / .loop segments (may double-draw).",
+    }, OnOff(function() return P().forceIFStyle end, function(on)
+        P().forceIFStyle = on
+        IF.RXPPath.Apply()
+    end, "Force IF style")),
+    Item({
+        key = "rxpPathThick", group = "rxp", label = "Path thickness",
+        tip = "Line thickness on the world map (Deck OLED prefers thicker).",
+    }, {
+        value = function() return tostring(P().thickness) end,
+        text = function() return tostring(P().thickness) end,
+        options = function()
+            return {
+                { action = "2", name = "2 (thin)" },
+                { action = "3", name = "3" },
+                { action = "3.5", name = "3.5 (Deck)" },
+                { action = "4.5", name = "4.5" },
+                { action = "6", name = "6 (heavy)" },
+            }
+        end,
+        choose = function(action)
+            P().thickness = tonumber(action) or 3.5
+            IF.RXPPath.Apply()
+            menu.Toast("Path thickness: " .. tostring(P().thickness))
+        end,
+    }),
 }
 
 local GROUPS = {
     { key = "look", label = "Peek map" },
+    { key = "rxp", label = "RestedXP path" },
 }
 
 IF.PeekMapEditor = IF.SettingsPage({ key = "map", label = "Map", module = "map", order = 50 }, GROUPS, ITEMS)

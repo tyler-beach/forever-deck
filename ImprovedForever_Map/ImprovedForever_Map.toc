@@ -1,15 +1,17 @@
 ## Interface: 16001, 16002, 16003, 16100, 16101, 16200
 ## Title: Improved Forever: Map
-## Notes: The peek map: the game's map while a press is held.
+## Notes: The peek map, and thick RestedXP path lines on the world map (Immersion gold).
 ## Author: markg
-## Version: 0.7.2
-## X-Website: https://github.com/markgravity/ImprovedForever
+## Version: 0.8.0
+## X-Website: https://github.com/tyler-beach/forever-deck
 ## X-License: MIT
 ## X-Curse-Project-ID: 1736870
 ## IconTexture: Interface\AddOns\ImprovedForever\textures\ic_mod_map
 ## Group: ImprovedForever
 ## Dependencies: ImprovedForever
+## OptionalDeps: RXPGuides
 
 Module.lua
 PeekMap.lua
+RXPPath.lua
 PeekMapEditor.lua

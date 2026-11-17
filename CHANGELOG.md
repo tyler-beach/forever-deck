@@ -1,5 +1,10 @@
 # Changelog
 
+## Map 0.8.0 (tyler-beach)
+
+- **RestedXP path lines** on the world map: thick Immersion-gold polylines (player → arrow target + same-zone gotos when the step has no RXP `.line` segments). Soft-dep `RXPGuides`.
+- Map tab → RestedXP path; `/if path [on|off|debug|force|status]`. Avoids double-draw unless **Force IF style**.
+
 ## Docs (tyler-beach)
 
 - Deck recommended addon stack: `docs/deck-addon-stack.md` + README table (Spoken, RXP, DBM, Totems, what to skip / reskin).
