@@ -2,9 +2,15 @@
 
 > **Repo note:** `tyler-beach/forever-deck` was originally a ForeverDeck HUD scaffold. It has been
 > **repurposed** as the private home for this ImprovedForever fork (RestedXP → Quest Tracker
-> integration). The ForeverDeck addon tree was removed from `main`. Upstream remains
-> [markgravity/ImprovedForever](https://github.com/markgravity/ImprovedForever). A parallel empty
-> `tyler-beach/improved-forever` repo may receive a mirror when the Cursor GitHub App can access it.
+> integration). Upstream remains [markgravity/ImprovedForever](https://github.com/markgravity/ImprovedForever).
+> A parallel empty `tyler-beach/improved-forever` repo may receive a mirror when the Cursor GitHub App
+> can access it.
+>
+> **Removed from `main` (ForeverDeck purge):** the entire `ForeverDeck/` addon tree — Core, HUD,
+> RestedXPPath / ShamanPvE stubs, TOC, and the old forever-deck README/scaffold. HUD PR
+> [#1](https://github.com/tyler-beach/forever-deck/pull/1) is closed as obsolete for this repo.
+> **`main` is now the ImprovedForever tree** (including RXP leveling / profession / dungeon / legacy
+> QuestTracker modules).
 
 # Improved Forever - Controller & Gamepad
 
@@ -47,7 +53,7 @@ the core, **Improved Forever**:
 | `ImprovedForever_Fishing` | Fishing from the controller: fishing mode, a cast bar of its own, the session's stringer, the Fish Collection. |
 | `ImprovedForever_Camp` | Sitting by a campfire as a cutscene: the HUD gone, black bars, the camera cutting between shots round you, your day told back from the Journal, the camp's benefits when they come, what's said near you as subtitles. |
 | `ImprovedForever_Immersion` | The game's HUD made immersive: the target's health across the top, yours bottom left in the same look in a ring of your experience, your health and power as lines along the bottom edge, your pet and party as cards, the gamepad bar as Hogwarts Legacy's spell diamonds bottom right, the chat as just its lines until used. Needs Journal and Spoken. |
-| `ImprovedForever_QuestTracker` | The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), **RestedXP guide steps** when `RXPGuides` is loaded (soft dep), an objective complete sound, full controller support. Formerly Improved Quest Tracker. |
+| `ImprovedForever_QuestTracker` | The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), **RestedXP guide steps** (leveling / profession / dungeon / legacy modules) when `RXPGuides` is loaded (soft dep), an objective complete sound, full controller support. Formerly Improved Quest Tracker. |
 
 ## Features
 
