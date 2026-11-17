@@ -601,21 +601,58 @@ local function Native(bar, i)
     return side and side["ActionButton" .. ((i - 1) % 4 + 1)]
 end
 
--- The slot's cooldown, in seconds (start, duration): its action's, read
--- straight from the game (C_ActionBar.GetActionCooldown; the button's own
--- cooldown frame is hidden or reset while it plays its cast animation),
--- else that frame's (the top bar's own face buttons)
+-- Spell cooldown from an id (seconds). Prefer this for shared CDs: action-slot
+-- cooldown only stamps the button you cast from; GetSpellCooldown sees the
+-- category (Shaman Earth / Flame / Frost Shock share one).
+local function SpellCooldownByID(spellID)
+    if not spellID or Secret(spellID) then return nil end
+    if C_Spell and C_Spell.GetSpellCooldown then
+        local ok, info = pcall(C_Spell.GetSpellCooldown, spellID)
+        if ok and type(info) == "table" and not Secret(info.startTime) and not Secret(info.duration) then
+            return info.startTime, info.duration
+        end
+    elseif GetSpellCooldown then
+        local ok, start, duration = pcall(GetSpellCooldown, spellID)
+        if ok and not (Secret(start) or Secret(duration)) then
+            return start, duration
+        end
+    end
+end
+
+local function ActionSpellID(native)
+    local action = native and native.action
+    if not action then return nil end
+    local special = native.SpecialActionIcon
+    if special and special:IsShown() then return nil end
+    local ok, kind, id = pcall(GetActionInfo, action)
+    if not ok or Secret(kind) or Secret(id) then return nil end
+    if kind == "macro" then
+        id = GetMacroSpell and GetMacroSpell(id)
+    elseif kind ~= "spell" then
+        return nil
+    end
+    return id
+end
+
+-- Pick the more informative of two (start, duration) pairs (shared CD wins).
+local function PreferCD(a0, a1, b0, b1)
+    local aOk = type(a0) == "number" and type(a1) == "number" and a1 > 0
+    local bOk = type(b0) == "number" and type(b1) == "number" and b1 > 0
+    if aOk and bOk then
+        -- Later start (or longer remaining) is the live shared timer.
+        if a0 >= b0 then return a0, a1 end
+        return b0, b1
+    end
+    if aOk then return a0, a1 end
+    if bOk then return b0, b1 end
+end
+
+-- The slot's cooldown, in seconds (start, duration): spell CD (shared-aware),
+-- else action CD, else the button's cooldown frame (top bar face buttons).
 local function SlotCooldown(native)
     -- (a stand-in's (GB.StandIn): its spell's or item's)
     if native.spellID then
-        if C_Spell and C_Spell.GetSpellCooldown then
-            local ok, info = pcall(C_Spell.GetSpellCooldown, native.spellID)
-            if ok and type(info) == "table" then return info.startTime, info.duration end
-        elseif GetSpellCooldown then
-            local ok, start, duration = pcall(GetSpellCooldown, native.spellID)
-            if ok then return start, duration end
-        end
-        return nil
+        return SpellCooldownByID(native.spellID)
     elseif native.itemID then
         local get = (C_Item and C_Item.GetItemCooldown) or GetItemCooldown
         if get then
@@ -626,20 +663,24 @@ local function SlotCooldown(native)
     end
     local action = native.action
     local special = native.SpecialActionIcon
+    local aStart, aDur
     if action and not (special and special:IsShown()) then
         if C_ActionBar and C_ActionBar.GetActionCooldown then
             local ok, info = pcall(C_ActionBar.GetActionCooldown, action)
-            if ok and type(info) == "table" then return info.startTime, info.duration end
+            if ok and type(info) == "table" then aStart, aDur = info.startTime, info.duration end
         elseif GetActionCooldown then
             local ok, start, duration = pcall(GetActionCooldown, action)
-            if ok then return start, duration end
+            if ok then aStart, aDur = start, duration end
         end
     end
+    local sStart, sDur = SpellCooldownByID(ActionSpellID(native))
+    local start, duration = PreferCD(sStart, sDur, aStart, aDur)
+    if start then return start, duration end
     local cd = native.cooldown
     if cd and cd.GetCooldownTimes and cd:IsShown() then
-        local ok, start, duration = pcall(cd.GetCooldownTimes, cd)
-        if ok and not (Secret(start) or Secret(duration)) and type(start) == "number" and type(duration) == "number" then
-            return start / 1000, duration / 1000
+        local ok, st, dur = pcall(cd.GetCooldownTimes, cd)
+        if ok and not (Secret(st) or Secret(dur)) and type(st) == "number" and type(dur) == "number" then
+            return st / 1000, dur / 1000
         end
     end
 end
@@ -847,15 +888,39 @@ end
 
 -- A cooldown in a fight: the game keeps its times secret, your own casts stay readable
 -- (UNIT_SPELLCAST_SUCCEEDED). The cast's time and the spell's length (learnt out of the fight,
--- else its base one) stand in for it. A spell shared with another (the shocks) isn't seen.
-local castAt, castLength = {}, {}
+-- else its base one) stand in for it. Spells that share a CD (Shaman shocks) stamp the
+-- whole group so every diamond shows the timer, not only the one you pressed.
+local castAt, castLength = {}, {}       -- exact name
+local castAtGroup, castLengthGroup = {}, {} -- shared group id
+-- Base name (no rank) -> group. Expand as Forever reveals more shared families.
+local SHARED_CD = {
+    ["earth shock"] = "shaman_shock",
+    ["flame shock"] = "shaman_shock",
+    ["frost shock"] = "shaman_shock",
+}
+
+local function BaseSpellName(name)
+    if type(name) ~= "string" or Secret(name) then return nil end
+    -- "Flame Shock(Rank 2)" / "Flame Shock (Rank 2)" → "flame shock"
+    return (name:gsub("%s*%([^)]*%)%s*$", ""):match("^%s*(.-)%s*$") or name):lower()
+end
+
+local function SharedGroup(name)
+    local base = BaseSpellName(name)
+    return base and SHARED_CD[base] or nil
+end
+
 local ownCasts = CreateFrame("Frame")
 ownCasts:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 ownCasts:SetScript("OnEvent", function(_, _, _, _, spellID)
     if Secret(spellID) or type(spellID) ~= "number" then return end
     local get = C_Spell and C_Spell.GetSpellName or GetSpellInfo
     local ok, name = pcall(get, spellID)
-    if ok and type(name) == "string" and not Secret(name) then castAt[name] = GetTime() end
+    if not (ok and type(name) == "string" and not Secret(name)) then return end
+    local now = GetTime()
+    castAt[name] = now
+    local group = SharedGroup(name)
+    if group then castAtGroup[group] = now end
 end)
 
 local function BaseLength(name)
@@ -869,14 +934,23 @@ end
 
 function LearnLength(native, duration)
     local name = SlotSpellName(native)
-    if name and duration > GCD_MAX then castLength[name] = duration end
+    if not (name and duration > GCD_MAX) then return end
+    castLength[name] = duration
+    local base = BaseSpellName(name)
+    if base then castLength[base] = duration end
+    local group = SharedGroup(name)
+    if group then castLengthGroup[group] = duration end
 end
 
 function OwnCastCooldown(native)
     local name = SlotSpellName(native)
-    local at = name and castAt[name]
+    if not name then return nil end
+    local group = SharedGroup(name)
+    local base = BaseSpellName(name)
+    local at = castAt[name] or (group and castAtGroup[group])
     if not at then return nil end
-    local length = castLength[name] or BaseLength(name)
+    local length = castLength[name] or (base and castLength[base])
+        or (group and castLengthGroup[group]) or BaseLength(name)
     if not length or GetTime() >= at + length then return nil end
     return at, length, true
 end

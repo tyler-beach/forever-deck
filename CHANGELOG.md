@@ -1,5 +1,9 @@
 # Changelog
 
+## Immersion 0.13.5 (tyler-beach)
+
+- Gamepad diamonds: **shared cooldowns** show on every linked spell (e.g. Shaman Earth / Flame / Frost Shock), not only the one you cast — spell-CD read out of combat, shared-group timer in combat when numbers are secret.
+
 ## Quest Tracker 0.6.11 (tyler-beach)
 
 - **Hide RestedXP’s own guide window** by default when IF shows RXP steps (Deck OLED). Setting: Quest Tracker → RestedXP → Hide RestedXP window; `/if quests rxp hide [on|off]`.
