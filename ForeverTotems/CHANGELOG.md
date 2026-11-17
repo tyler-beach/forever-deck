@@ -1,0 +1,142 @@
+# Changelog
+
+## 1.1.0 (tyler-beach / forever-deck)
+
+- Vendored into forever-deck from upstream `d042ace` (1.0.5).
+- Immersion-aligned bar chrome: Morpheus timers, gold edges, diamond-cut icons.
+- Ships inside `ImprovedForever-All-forever.zip`; see `VENDOR.md`.
+
+## 1.0.5
+
+Fixed:
+
+- **The flood of errors when a fight started.** The range check reads your
+  position from the map, and in combat this client can hand that back
+  protected, which an addon is not allowed to do arithmetic on. That read runs
+  several times a second while a totem is out, so the client ended up putting
+  its "this addon has too many errors" dialog in front of you, over and over,
+  and a reload only reset the counter. The read is guarded now, step by step,
+  and with no coordinates the range warning simply keeps quiet.
+- Everything the bar does on each frame is now wrapped: whatever fails is
+  reported once, counted, listed under faults in `/ft check`, and the rest
+  keeps working. An addon cannot bury you in dialogs that way.
+- The data carried by combat events is checked before it is read, in the swing
+  timer, the cooldown watch and the Windfury detector alike.
+
+Changed:
+
+- **Leaving the totem range is a line you cross now.** It warns you on the way
+  out, again when you come back in, and again the next time you leave. Before,
+  it warned once per totem and then stayed quiet however many times you crossed
+  it, which is no use in pvp. There are a few yards of slack between the two
+  lines and a moment of settling, so standing on the edge does not set it
+  chirping. The way back in can be turned off on its own.
+
+## 1.0.4
+
+New:
+
+- **`/ft set cycle`** switches to the next set and wraps around to the first,
+  so a single button (handy on a gamepad) steps through all of them.
+  `/ft set prev` goes the other way. Thanks to tobaljackson for the idea and
+  the first version of it.
+
+Fixed:
+
+- Water Shield was missing from the shield button. The addon looked it up by a
+  spell id from a later expansion, which does not exist on this client.
+- Earth totems such as Stoneskin and Strength of Earth could end up under Fire.
+  When a fight ended, the last totem you had cast was filed under every element
+  the addon had been estimating, and the mistake was saved. That no longer
+  happens, and totems saved under the wrong element are put back on login.
+
+
+## 1.0.3
+
+New:
+
+- **Windfury procs.** The icon flashes above the bar, in the blue of the imbue
+  so it does not read as the Stormstrike cue. This client announces no cast for
+  the proc, so the extra attack itself is what gives it away: two blows landing
+  within a few hundredths of a second of each other. A Searing Totem ticking
+  next to a swing looks the same from the outside, so size decides, and what
+  your weapon hits for is learned from the fight rather than written down here.
+  It starts measuring again whenever you change weapon. No sound by default:
+  every cue this client offers is a user interface blip.
+- **Improved Stormstrike.** The talent resets the cooldown every time you dodge
+  or parry, which made a watch that only counts down wrong for half the fight.
+  Avoiding a blow now counts as a possible reset: while the client still
+  reports the cooldown it is asked and believed, and while it does not, what it
+  said earlier is used. Whether you have the talent is read off the talent
+  tooltip, learned from the fight, or set by hand with `/ft cdreset`.
+- Four more cues to choose from, and `/ft wf`, `/ft wfprobe` and `/ft cdtest`
+  to see what any of this is doing.
+
+## 1.0.2
+
+Fixed:
+
+- Totemic Recall and Totemic Projection were showing up as totems. The word
+  "totem" was being matched inside longer words, so anything "totemic" counted.
+- The little arrows above each slot drew on top of the world map. They are gone
+  entirely, and the bar now fades out while the map is open.
+
+New:
+
+- **Shield button.** Casts Lightning Shield, or Water or Earth Shield if you
+  know them, and shows the charges left rather than a clock, because charges
+  are what run out. It warns you once if you enter a fight without one.
+- **Cooldown watch.** A sound and a quick icon flash above the bar the moment a
+  watched ability comes back. Stormstrike is watched by default; `/ft watch
+  <spell>` adds or removes any other. Only speaks up in combat. If the client
+  stops reporting cooldowns mid-fight, the duration learned earlier keeps the
+  count going.
+- **Pick a spell by hovering its icon.** The totem slots, the shield and the
+  imbue all open their list on hover now. The call button does too, and offers
+  Totemic Recall and Totemic Projection alongside Call of the Elements.
+
+Removed:
+
+- The Purge button. It was a plain cast button with nothing to show, since this
+  client does not let addons read enemy auras.
+
+## 1.0.1
+
+Swing timer, rewritten around what this client actually reports:
+
+- It no longer starts when you right click a target from out of range. Auto
+  attack being on is not evidence of a swing, so the bar now waits for a hit to
+  land and anchors the cycle there.
+- Hits are matched by cadence instead of by where they fall in the window. Your
+  swings arrive one weapon speed apart; a Searing Totem ticking on the same
+  target does not, and no longer steals the rhythm. A bad anchor used to lock
+  the timer into a wrong phase forever, because every real swing landed in the
+  half that was being rejected.
+- Taking a hit no longer reset your swing. The unit filter included
+  "targettarget", which in a melee fight is you.
+- The cycle chains into the next swing instead of freezing at 0.0s, and keeps
+  running when the client stops reporting your attack speed mid-fight.
+- One colour throughout, with "~" marking a predicted cycle.
+
+Weapon imbues:
+
+- Detected from the weapon tooltip. This client reports no temporary enchant
+  through GetWeaponEnchantInfo and puts nothing in your buffs.
+- The enchant is named after the short form plus its rank ("Rockbiter 3"), not
+  after the spell ("Rockbiter Weapon"), so matching now works out which word is
+  generic by comparing your known imbues against each other.
+- Time left shown in minutes, green while it is up and orange in the last
+  minute.
+
+## 1.0.0
+
+First release.
+
+- Totem bar with countdowns, quick recast and per-slot flyouts
+- Totem sets, castsequence button, generated macro and sync with the game's
+  totem bar
+- Expiry, destroyed and out-of-range warnings with a selectable sound
+- Weapon imbue button, remaining time and a warning when entering combat
+  without one
+- Swing timer
+- Keybinds for every button, configurable bar order, scale and layout

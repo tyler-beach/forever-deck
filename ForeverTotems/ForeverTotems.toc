@@ -1,0 +1,27 @@
+## Interface: 16001, 16002, 16003, 16100, 16101, 16200
+## Title: Forever Totems
+## Notes: Shaman totem manager (vendored into tyler-beach/forever-deck): bar with countdowns, one-click sets, quick recast and range warnings. Immersion-gold chrome.
+## Author: bverger (upstream); tyler-beach fork packaging
+## Version: 1.1.0
+## IconTexture: Interface\Icons\Spell_Nature_StoneClawTotem
+## SavedVariables: ForeverTotemsDB
+## Category: Class
+## Group: ImprovedForever
+## X-License: MIT
+## X-Category: Combat
+## X-Website: https://github.com/tyler-beach/forever-deck
+## OptionalDeps: ImprovedForever_Immersion
+
+Core.lua
+Sets.lua
+TotemBar.lua
+Flyout.lua
+Weapon.lua
+Windfury.lua
+Shield.lua
+Cooldown.lua
+Swing.lua
+SelfTest.lua
+Bar.lua
+Warnings.lua
+Options.lua

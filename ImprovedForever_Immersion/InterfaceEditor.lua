@@ -397,9 +397,9 @@ local ITEMS = {
     }, Toggle("hudAuras", "Buffs along the bottom (experiment)", function() IN.HudLayout.Apply() end)),
     Item({
         key = "foreverTotemsSkin", group = "bottom", section = "Totems", label = "Skin Forever Totems",
-        tip = "When Forever Totems is installed, restyle its bar to Immersion: gold edges, diamond-cut "
-            .. "icons, Morpheus timers. Soft dependency — install Forever Totems from CurseForge "
-            .. "(bverger); we do not bundle it. Off leaves their default look.",
+        tip = "Restyle Forever Totems to Immersion: gold edges, diamond-cut icons, Morpheus timers. "
+            .. "Forever Totems ships in the forever-deck All pack (vendored MIT); the bar already "
+            .. "matches Immersion. Off leaves stock colours if you use an unskinned build.",
     }, Toggle("foreverTotemsSkin", "Skin Forever Totems", function()
         if IN.ForeverTotemsSkin and IN.ForeverTotemsSkin.Apply then IN.ForeverTotemsSkin.Apply() end
     end)),

@@ -1,0 +1,699 @@
+--------------------------------------------------------------------------------
+-- Forever Totems - Core.lua
+-- Totem state, element learning and shared helpers.
+--------------------------------------------------------------------------------
+local ADDON, ns = ...
+
+ns.version = "1.0.0"
+
+--------------------------------------------------------------------------------
+-- Totem slots (the client defines them, but we take nothing for granted)
+--------------------------------------------------------------------------------
+local FIRE  = _G.FIRE_TOTEM_SLOT  or 1
+local EARTH = _G.EARTH_TOTEM_SLOT or 2
+local WATER = _G.WATER_TOTEM_SLOT or 3
+local AIR   = _G.AIR_TOTEM_SLOT   or 4
+local MAX_SLOTS = _G.MAX_TOTEMS or 4
+
+ns.FIRE, ns.EARTH, ns.WATER, ns.AIR = FIRE, EARTH, WATER, AIR
+ns.MAX_SLOTS = MAX_SLOTS
+
+ns.ELEMENTS = {
+    [FIRE]  = { key = "FIRE",  label = "Fire",  color = { 0.98, 0.42, 0.16 } },
+    [EARTH] = { key = "EARTH", label = "Earth", color = { 0.76, 0.55, 0.28 } },
+    [WATER] = { key = "WATER", label = "Water",   color = { 0.25, 0.60, 0.98 } },
+    [AIR]   = { key = "AIR",   label = "Air",   color = { 0.55, 0.88, 0.92 } },
+}
+ns.DEFAULT_ORDER = { FIRE, EARTH, WATER, AIR }
+
+--------------------------------------------------------------------------------
+-- Defaults
+--------------------------------------------------------------------------------
+local defaults = {
+    dbVersion = 7,
+    bar = {
+        point = "CENTER", x = 0, y = -180,
+        scale = 1.0, size = 44, spacing = 6,
+        orientation = "HORIZONTAL",
+        locked = false,
+        hidden = false,
+        showTimerText = true,
+        showKeybindText = true,
+        showSequenceButton = true,
+        showCallButton = true,
+        showArrows = true,
+        hideEmptySlots = false,
+        order = { FIRE, EARTH, WATER, AIR },
+    },
+    warnings = {
+        expire = true, expireAt = 4,
+        death = true,
+        range = true, rangeYards = 22,
+        -- and a word when you are back inside it, which is what matters in pvp
+        rangeReturn = true, rangeMargin = 3,
+        sound = true, chat = true, screen = true,
+        soundChoice = "soft",
+    },
+    sequence = { reset = "12" },
+    swing = { enabled = true, height = 12, showText = true },
+    cooldowns = { enabled = true, sound = true, screen = false, watch = {}, durations = {},
+                  soundChoice = "soft", channel = "SFX", combatOnly = true,
+                  flash = true, flashSize = 64, flashTime = 0.6,
+                  -- [spell] = the cooldown resets when you dodge or parry
+                  resets = {}, resetsManual = {} },
+    -- The proc is the icon flashing, nothing else. Every cue this client has to
+    -- offer is a user interface blip, and one of those going off several times
+    -- a fight is worse than no cue at all, so the sound is there to be turned
+    -- on by anyone who wants it rather than on by default.
+    windfury = { enabled = true, sound = false, screen = false, melee = true,
+                 soundChoice = "pop", channel = "SFX",
+                 flash = true, flashSize = 72, flashTime = 0.5 },
+    shield = { spell = nil, warn = true, warnBelow = 0, sound = true, button = true },
+    weapon = {
+        spell = nil, warn = true, warnBelow = 0, sound = true,
+        offHand = false, button = true,
+    },
+    binds = { sequence = nil, slots = {} },
+    rightClickDestroy = true,
+    callSpell = nil,     -- which "Call of ..." the bar button uses
+    syncTotemBar = true, -- mirror the active set into the game's totem bar
+    fallbackLastCast = true,
+    skipActiveTotems = false, -- opt-in: out of combat, aim the set button at what is missing
+    sets = {},
+    learned = {},   -- [spell name] = slot
+    durations = {}, -- [spell name] = duration in seconds (learned)
+    chars = {},     -- [nombre-reino] = { activeSet = n }
+    debug = false,
+}
+
+--------------------------------------------------------------------------------
+-- Helpers
+--------------------------------------------------------------------------------
+local PREFIX = "|cff4fc3f7Forever Totems|r: "
+
+function ns:Print(...)
+    print(PREFIX .. strjoin(" ", tostringall(...)))
+end
+
+function ns:Debug(...)
+    if self.db and self.db.debug then
+        print("|cff888888FT dbg|r " .. strjoin(" ", tostringall(...)))
+    end
+end
+
+local function CopyDefaults(dst, src)
+    for k, v in pairs(src) do
+        if type(v) == "table" then
+            if type(dst[k]) ~= "table" then dst[k] = {} end
+            CopyDefaults(dst[k], v)
+        elseif dst[k] == nil then
+            dst[k] = v
+        end
+    end
+    return dst
+end
+
+-- Internal callbacks (bar / warnings / options subscribe here)
+local callbacks = {}
+function ns:On(event, fn)
+    callbacks[event] = callbacks[event] or {}
+    table.insert(callbacks[event], fn)
+end
+function ns:Fire(event, ...)
+    local list = callbacks[event]
+    if not list then return end
+    for i = 1, #list do list[i](...) end
+end
+
+--------------------------------------------------------------------------------
+-- Secret values (12.0+)
+--
+-- In combat, encounters, dungeons or PvP the client returns totem data as
+-- "secret": it can be handed to engine APIs, but looking at it from Lua
+-- (comparing it, testing it, doing arithmetic on it) is an error. Here we only
+-- detect it; the addon never stores one.
+--------------------------------------------------------------------------------
+local function AnySecret(...)
+    if _G.hasanysecretvalues then return hasanysecretvalues(...) end
+    if not _G.issecretvalue then return false end
+    for i = 1, select("#", ...) do
+        if issecretvalue((select(i, ...))) then return true end
+    end
+    return false
+end
+ns.AnySecret = AnySecret
+
+--------------------------------------------------------------------------------
+-- Faults
+--
+-- Anything that breaks inside a frame handler breaks twenty times a second,
+-- and what you see is the client putting a dialog in front of you telling you
+-- this addon is misbehaving, over and over, until you reload. So the work done
+-- on every tick is run through here: the first one is reported, the rest are
+-- counted, and the parts that still work keep working.
+--------------------------------------------------------------------------------
+local faults = {}
+ns.faults = faults
+
+function ns.Safely(name, fn, ...)
+    local ok, err = pcall(fn, ...)
+    if ok then return true end
+
+    local fault = faults[name]
+    if not fault then
+        fault = { count = 0, first = tostring(err), at = GetTime() }
+        faults[name] = fault
+        ns:Print(("something went wrong in %s, and it has been switched off for now:"):format(name))
+        ns:Print("  " .. fault.first)
+        ns:Print("  This will not be repeated. |cffffd100/ft check|r has the details.")
+    end
+    fault.count = fault.count + 1
+    return false
+end
+
+function ns:FaultReport()
+    local lines = {}
+    for name, fault in pairs(faults) do
+        lines[#lines + 1] = ("  %s: %d times, first was %s"):format(name, fault.count, fault.first)
+    end
+    if #lines == 0 then return "  nothing has gone wrong" end
+    return table.concat(lines, "\n")
+end
+
+function ns:IsSecret()
+    return self.state.secret and true or false
+end
+
+--------------------------------------------------------------------------------
+-- API compatibility (the Forever client uses C_Spell / C_SpellBook)
+--------------------------------------------------------------------------------
+function ns.SpellInfo(id)
+    if not id then return nil end
+    if C_Spell and C_Spell.GetSpellInfo then
+        local info = C_Spell.GetSpellInfo(id)
+        if info then return info.name, info.iconID or info.originalIconID, info.spellID or id end
+    elseif _G.GetSpellInfo then
+        local name, _, icon = _G.GetSpellInfo(id)
+        if name then return name, icon, id end
+    end
+    return nil
+end
+
+function ns.SpellTextureByName(name)
+    if not name then return nil end
+    if C_Spell and C_Spell.GetSpellTexture then return C_Spell.GetSpellTexture(name) end
+    if _G.GetSpellTexture then return _G.GetSpellTexture(name) end
+    return nil
+end
+
+-- Walks the spellbook with either the new or the old API
+local function IterateSpellbook(callback)
+    if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines and Enum and Enum.SpellBookSpellBank then
+        local bank = Enum.SpellBookSpellBank.Player
+        local lines = C_SpellBook.GetNumSpellBookSkillLines() or 0
+        for i = 1, lines do
+            local line = C_SpellBook.GetSpellBookSkillLineInfo(i)
+            if line and line.itemIndexOffset and line.numSpellBookItems then
+                for j = line.itemIndexOffset + 1, line.itemIndexOffset + line.numSpellBookItems do
+                    local info = C_SpellBook.GetSpellBookItemInfo(j, bank)
+                    if info and info.spellID and not info.isPassive then
+                        callback(info.spellID)
+                    end
+                end
+            end
+        end
+        return true
+    elseif _G.GetNumSpellTabs and _G.GetSpellBookItemInfo and _G.GetSpellTabInfo then
+        for i = 1, GetNumSpellTabs() do
+            local _, _, offset, numSpells = GetSpellTabInfo(i)
+            if offset and numSpells then
+                for j = offset + 1, offset + numSpells do
+                    local itemType, id = GetSpellBookItemInfo(j, "spell")
+                    if itemType == "SPELL" and id then callback(id) end
+                end
+            end
+        end
+        return true
+    end
+    return false
+end
+ns.IterateSpellbook = IterateSpellbook
+
+--------------------------------------------------------------------------------
+-- Totem spell detection
+--
+-- The word "Totem" is derived from the client itself (intersection of several
+-- known totem names), so it works in any language without translation.
+--------------------------------------------------------------------------------
+local KEYWORD_SEEDS = { 2484, 8071, 3599, 5394, 8512 }
+
+-- Element hints by English name. Only a seed: as soon as you cast a totem the
+-- addon learns its real slot and remembers it.
+local ENGLISH_HINTS = {
+    [FIRE]  = { "searing", "fire nova", "magma", "flametongue", "frost resistance" },
+    [EARTH] = { "earthbind", "stoneclaw", "stoneskin", "strength of earth", "tremor", "earth elemental" },
+    [WATER] = { "healing stream", "mana spring", "mana tide", "poison cleansing", "disease cleansing", "fire resistance" },
+    [AIR]   = { "grounding", "nature resistance", "windfury totem", "windwall", "grace of air", "tranquil air", "sentry", "air elemental" },
+}
+
+local totemKeyword
+
+local function DeriveTotemKeyword()
+    local wordSets, resolved = {}, 0
+    for _, id in ipairs(KEYWORD_SEEDS) do
+        local name = ns.SpellInfo(id)
+        if name then
+            resolved = resolved + 1
+            local words = {}
+            for w in name:gmatch("[^%s]+") do words[w:lower()] = true end
+            wordSets[#wordSets + 1] = words
+        end
+    end
+    if resolved < 2 then return nil end
+
+    local common
+    for _, words in ipairs(wordSets) do
+        if not common then
+            common = words
+        else
+            for w in pairs(common) do
+                if not words[w] then common[w] = nil end
+            end
+        end
+    end
+    local best
+    for w in pairs(common or {}) do
+        if not best or #w > #best then best = w end
+    end
+    return best
+end
+
+-- "Totemic Recall" contains "totem" but is not a totem. Matching the keyword
+-- as a whole word keeps the management spells out of the list.
+local function HasWord(text, word)
+    if not text or not word then return false end
+    for piece in text:lower():gmatch("[^%s]+") do
+        piece = piece:gsub("^%p+", ""):gsub("%p+$", "")
+        if piece == word then return true end
+    end
+    return false
+end
+ns.HasWord = HasWord
+
+function ns:GetTotemKeyword()
+    if totemKeyword == nil then
+        totemKeyword = DeriveTotemKeyword() or "totem"
+        self:Debug("totem keyword:", totemKeyword)
+    end
+    return totemKeyword
+end
+
+-- The element the English name points at, or nil on other languages and on
+-- totems the hints do not know
+function ns:HintSlot(spellName)
+    if not spellName then return nil end
+    local lower = spellName:lower()
+    for slot, hints in pairs(ENGLISH_HINTS) do
+        for _, hint in ipairs(hints) do
+            if lower:find(hint, 1, true) then return slot end
+        end
+    end
+    return nil
+end
+
+-- A spell's element: what we learned beats the English hint
+function ns:GetSpellSlot(spellName)
+    if not spellName then return nil end
+    local learned = self.db and self.db.learned[spellName]
+    if learned then return learned end
+    return self:HintSlot(spellName)
+end
+
+-- Would teaching this spell this slot contradict its English name
+function ns:ContradictsHint(spellName, slot)
+    local hint = self:HintSlot(spellName)
+    return hint ~= nil and hint ~= slot
+end
+
+-- Earlier versions could file a totem under the wrong element (see ScanTotems)
+-- and the mistake was saved. Drop whatever the name plainly contradicts.
+function ns:ForgetWrongElements()
+    local dropped = 0
+    for name, slot in pairs(self.db.learned) do
+        if self:ContradictsHint(name, slot) then
+            self.db.learned[name] = nil
+            dropped = dropped + 1
+        end
+    end
+    if dropped > 0 then self:Debug("dropped", dropped, "totems filed under the wrong element") end
+end
+
+-- ns.totemSpells        -> flat list { name, icon, slot }
+-- ns.totemSpellsBySlot  -> [slot] = { entries }  (slot 0 = unclassified)
+function ns:RefreshTotemSpells()
+    local keyword = self:GetTotemKeyword()
+    local seen, list = {}, {}
+
+    local function consider(id)
+        local name, icon = self.SpellInfo(id)
+        if not name or seen[name] then return end
+        local isTotem = HasWord(name, keyword)
+        if not isTotem and self.db.learned[name] then isTotem = true end
+        if not isTotem then return end
+        seen[name] = true
+        list[#list + 1] = { name = name, icon = icon, slot = self:GetSpellSlot(name) or 0 }
+    end
+
+    if not IterateSpellbook(consider) then
+        self:Debug("no spellbook API available")
+    end
+
+    -- Totems already learned are included even if the spellbook cannot be read
+    for name, slot in pairs(self.db.learned) do
+        if not seen[name] then
+            seen[name] = true
+            list[#list + 1] = { name = name, icon = self.SpellTextureByName(name), slot = slot }
+        end
+    end
+
+    table.sort(list, function(a, b)
+        if a.slot ~= b.slot then return a.slot < b.slot end
+        return a.name < b.name
+    end)
+
+    local bySlot = { [0] = {} }
+    for slot = 1, MAX_SLOTS do bySlot[slot] = {} end
+    for _, entry in ipairs(list) do
+        local bucket = bySlot[entry.slot] or bySlot[0]
+        bucket[#bucket + 1] = entry
+    end
+
+    self.totemSpells, self.totemSpellsBySlot = list, bySlot
+    self:Fire("SPELLS_REFRESHED")
+    return list
+end
+
+--------------------------------------------------------------------------------
+-- World position (in yards) for the range warning
+--------------------------------------------------------------------------------
+-- Where you are standing is exactly the sort of thing this client withholds in
+-- a fight, and in a battleground most of all. A secret cannot be compared or
+-- subtracted, so every step is checked before it is used and the whole read is
+-- wrapped: an error here would repeat for as long as the fight lasts.
+function ns.GetWorldPos()
+    if not (C_Map and C_Map.GetBestMapForUnit and C_Map.GetWorldPosFromMapPos) then return nil end
+
+    local ok, wx, wy, continent = pcall(function()
+        local map = C_Map.GetBestMapForUnit("player")
+        if AnySecret(map) or not map then return nil end
+
+        local pos = C_Map.GetPlayerMapPosition(map, "player")
+        if AnySecret(pos) or not pos then return nil end
+
+        local px, py = pos:GetXY()
+        if AnySecret(px, py) then return nil end
+        if not px or (px == 0 and py == 0) then return nil end
+
+        local cont, world = C_Map.GetWorldPosFromMapPos(map, pos)
+        if AnySecret(cont, world) or not world then return nil end
+
+        local x, y = world:GetXY()
+        if AnySecret(x, y) or not x then return nil end
+        return x, y, cont
+    end)
+
+    if not ok or not wx then return nil end
+    return wx, wy, continent
+end
+
+--------------------------------------------------------------------------------
+-- Totem state
+--------------------------------------------------------------------------------
+local state = { totems = {}, lastBySlot = {}, pending = nil, combat = false }
+ns.state = state
+for slot = 1, MAX_SLOTS do state.totems[slot] = { have = false } end
+
+function ns:ScanTotems()
+    if not _G.GetTotemInfo then return end
+    local now = GetTime()
+    local changed = false
+    local anySecret = false
+
+    for slot = 1, MAX_SLOTS do
+        local cur = state.totems[slot]
+        local have, name, start, duration, icon = GetTotemInfo(slot)
+
+        if AnySecret(have, name, start, duration, icon) then
+            -- The client hides this slot from us. Keep the last thing we knew
+            -- and expire it with our own clock.
+            anySecret = true
+            if cur.have and (cur.start + cur.duration) - now <= 0 then
+                cur.have = false
+                changed = true
+            end
+        elseif have and duration and duration > 0 then
+            if (not cur.have) or cur.start ~= start or cur.name ~= name or cur.synthetic then
+                local pending, spellName = state.pending, nil
+                if pending and (now - pending.time) <= 2.5 then
+                    local sameName = pending.name == name
+                    local sameIcon = icon and pending.icon and icon == pending.icon
+                    -- The last cast is only a guess for this slot when the
+                    -- names do not match. After a fight every slot we were
+                    -- estimating is read again at once, and the last totem
+                    -- you cast would be filed under all of them: that is how
+                    -- Stoneskin ended up under Fire. So no guessing on those,
+                    -- and never against what the name says.
+                    local looksTotem = HasWord(pending.name, self:GetTotemKeyword())
+                        and not cur.synthetic
+                        and not self:ContradictsHint(pending.name, slot)
+                    if sameName or sameIcon or looksTotem then
+                        spellName = pending.name
+                        self.db.learned[spellName] = slot
+                        state.lastBySlot[slot] = { name = spellName, icon = pending.icon or icon }
+                        state.pending = nil   -- one cast, one slot
+                    end
+                end
+
+                cur.have, cur.name, cur.start, cur.duration, cur.icon = true, name, start, duration, icon
+                cur.spellName = spellName or cur.spellName
+                cur.synthetic = false
+                cur.warnedExpire, cur.outOfRange, cur.lastRangeWarn = false, false, 0
+                cur.wx, cur.wy, cur.wc = self.GetWorldPos()
+                changed = true
+
+                -- Learning the duration is what lets us keep counting in
+                -- combat, once the client stops telling us.
+                if cur.spellName then self.db.durations[cur.spellName] = duration end
+
+                if self.Warnings then self.Warnings:OnTotemPlaced(slot, cur) end
+            else
+                cur.duration = duration
+            end
+        elseif cur.have then
+            local remaining = (cur.start + cur.duration) - now
+            cur.have = false
+            changed = true
+            -- If we were estimating blind, we cannot know if it was killed
+            if self.Warnings and not cur.synthetic then
+                self.Warnings:OnTotemLost(slot, cur, remaining)
+            end
+        end
+    end
+
+    state.secret = anySecret
+    if changed then self:Fire("TOTEMS_CHANGED") end
+end
+
+-- Totem cast while the client hides the data: rebuild it from the element and
+-- duration we already learned for that same spell.
+function ns:PlaceSyntheticTotem(spellName, icon)
+    local slot = self.db.learned[spellName] or self:GetSpellSlot(spellName)
+    if not slot then return false end
+    local duration = self.db.durations[spellName]
+    if not duration then return false end
+
+    local cur = state.totems[slot]
+    cur.have, cur.name, cur.start, cur.duration = true, spellName, GetTime(), duration
+    cur.icon = icon or cur.icon
+    cur.spellName, cur.synthetic = spellName, true
+    cur.warnedExpire, cur.outOfRange, cur.lastRangeWarn = false, false, 0
+    cur.wx, cur.wy, cur.wc = self.GetWorldPos()
+    state.lastBySlot[slot] = { name = spellName, icon = cur.icon }
+    self:Fire("TOTEMS_CHANGED")
+    return true
+end
+
+function ns:GetTotem(slot)
+    return state.totems[slot]
+end
+
+function ns:TotemRemaining(slot)
+    local t = state.totems[slot]
+    if not (t and t.have) then return 0 end
+    return math.max(0, (t.start + t.duration) - GetTime())
+end
+
+--------------------------------------------------------------------------------
+-- Queue for actions blocked by combat
+--------------------------------------------------------------------------------
+local pendingOutOfCombat = {}
+
+function ns:RunWhenPossible(key, fn)
+    if InCombatLockdown() then
+        pendingOutOfCombat[key] = fn
+        return false
+    end
+    fn()
+    return true
+end
+
+local function FlushPending()
+    for key, fn in pairs(pendingOutOfCombat) do
+        pendingOutOfCombat[key] = nil
+        fn()
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Startup
+--------------------------------------------------------------------------------
+local ef = CreateFrame("Frame")
+ef:RegisterEvent("ADDON_LOADED")
+ef:SetScript("OnEvent", function(self, event, ...)
+    if event == "ADDON_LOADED" then
+        local name = ...
+        if name ~= ADDON then return end
+        ForeverTotemsDB = CopyDefaults(ForeverTotemsDB or {}, defaults)
+        ns.db = ForeverTotemsDB
+
+        -- Off by default: it only ever worked out of combat, so it is opt-in
+        if (ns.db.dbVersion or 1) < 2 then
+            ns.db.skipActiveTotems = false
+            ns.db.dbVersion = 2
+        end
+        -- The purge module is gone: the client will not let any addon read
+        -- enemy auras in combat nor hook the combat log.
+        ns.db.purge = nil
+
+        -- Back on by request: the cycle now anchors itself on the first hit
+        -- that lands, which is what made it drift before.
+        if (ns.db.dbVersion or 1) < 4 then
+            ns.db.swing.enabled = true
+            ns.db.dbVersion = 4
+        end
+        -- The cooldown cue goes back to the softer warning sound, and only
+        -- speaks up in combat
+        if (ns.db.dbVersion or 1) < 5 then
+            ns.db.cooldowns.soundChoice = "soft"
+            ns.db.cooldowns.channel = "SFX"
+            ns.db.cooldowns.combatOnly = true
+            ns.db.dbVersion = 5
+        end
+
+        -- The Windfury cue was the whisper sound, which is the one sound an
+        -- alert must not be: you look at the chat frame instead of the fight
+        if (ns.db.dbVersion or 1) < 6 then
+            if ns.db.windfury.soundChoice == "whisper" then
+                ns.db.windfury.soundChoice = "pop"
+            end
+            ns.db.dbVersion = 6
+        end
+        -- None of them were any good. The flash says it well enough on its own.
+        if (ns.db.dbVersion or 1) < 7 then
+            ns.db.windfury.sound = false
+            ns.db.dbVersion = 7
+        end
+        -- Cheap, and it also mends what older versions got wrong
+        ns:ForgetWrongElements()
+
+        local charName = UnitName("player") or "?"
+        local realm = GetRealmName() or "?"
+        ns.charKey = charName .. "-" .. realm
+        ns.db.chars[ns.charKey] = ns.db.chars[ns.charKey] or {}
+        ns.charDB = ns.db.chars[ns.charKey]
+
+        local _, classToken = UnitClass("player")
+        ns.isShaman = (classToken == "SHAMAN")
+
+        self:UnregisterEvent("ADDON_LOADED")
+        self:RegisterEvent("PLAYER_LOGIN")
+        self:RegisterEvent("PLAYER_ENTERING_WORLD")
+        self:RegisterEvent("PLAYER_TOTEM_UPDATE")
+        self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+        self:RegisterEvent("SPELLS_CHANGED")
+        self:RegisterEvent("PLAYER_REGEN_ENABLED")
+        self:RegisterEvent("PLAYER_REGEN_DISABLED")
+        ns:Fire("DB_READY")
+
+    elseif event == "PLAYER_LOGIN" then
+        if not ns.isShaman then
+            ns:Debug("not a shaman, addon stays idle")
+            return
+        end
+        ns:RefreshTotemSpells()
+        ns.Sets:EnsureDefaultSet()
+        ns.Bar:Create()
+        ns.Sets:CreateSequenceButton()
+        ns.Sets:Apply()
+        ns.Weapon:Enable()
+        ns.Windfury:Enable()
+        ns.Shield:Enable()
+        if #ns.db.cooldowns.watch == 0 then
+            for _, name in ipairs(ns.Cooldown:DefaultNames()) do ns.Cooldown:Watch(name) end
+        end
+        ns.Cooldown:Rebuild()
+        ns.Cooldown:Enable()
+        ns.Swing:Enable()
+        ns:ApplyBindings()
+        ns:ScanTotems()
+        ns:Fire("READY")
+
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        if ns.isShaman then ns:ScanTotems() end
+
+    elseif event == "PLAYER_TOTEM_UPDATE" then
+        if ns.isShaman then ns:ScanTotems() end
+
+    elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+        if not ns.isShaman then return end
+        local unit, _, spellID = ...
+        if unit ~= "player" or not spellID then return end
+        local spellName, icon = ns.SpellInfo(spellID)
+        ns.Windfury:SeeCast(spellID, spellName)
+        if spellName then
+            state.pending = { id = spellID, name = spellName, icon = icon, time = GetTime() }
+            if state.secret then ns:PlaceSyntheticTotem(spellName, icon) end
+            ns.Cooldown:OnCast(spellName)
+            ns.Windfury:OnCast(spellName, spellID, icon)
+        end
+
+    elseif event == "SPELLS_CHANGED" then
+        if not ns.isShaman or not ns.db then return end
+        if ns.spellRefreshTimer then return end
+        ns.spellRefreshTimer = true
+        C_Timer.After(1, function()
+            ns.spellRefreshTimer = nil
+            ns:RefreshTotemSpells()
+            ns.Sets:EnsureDefaultSet()
+            ns.Sets:Apply()
+            -- Spell data can be uncached at login, which left the watch list
+            -- empty with nothing to retry it
+            if #ns.db.cooldowns.watch == 0 then
+                for _, name in ipairs(ns.Cooldown:DefaultNames()) do ns.Cooldown:Watch(name) end
+            end
+            ns.Cooldown:Rebuild()
+            ns.Cooldown:ScanTalents()
+            ns.Windfury:Forget()
+            ns.TotemBar.spells, ns.TotemBar.management = nil, nil
+        end)
+
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        state.combat = true
+
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        state.combat = false
+        FlushPending()
+        ns:ScanTotems()   -- out of combat the real data comes back
+        ns:Fire("COMBAT_ENDED")
+    end
+end)

@@ -1,8 +1,18 @@
 # Changelog
 
+## Forever Totems 1.1.0 (tyler-beach)
+
+- **Vendored** [bverger/ForeverTotems](https://github.com/bverger/ForeverTotems) @ `d042ace` (MIT) into this repo as `ForeverTotems/`.
+- Immersion-gold chrome baked into the bar; included in `ImprovedForever-All-forever.zip`.
+- Attribution: `ForeverTotems/VENDOR.md` + upstream `LICENSE`.
+
+## Immersion 0.13.4 (tyler-beach)
+
+- Tip / docs: Forever Totems now ships in the forever-deck All pack (still soft-dep skin).
+
 ## Immersion 0.13.3 (tyler-beach)
 
-- Soft-dep **Forever Totems** skin: Immersion gold edges, diamond-cut icons, Morpheus timers on their bar (install Forever Totems separately). Toggle: Immersion → Bottom → Totems → Skin Forever Totems.
+- Soft-dep **Forever Totems** skin: Immersion gold edges, diamond-cut icons, Morpheus timers on their bar. Toggle: Immersion → Bottom → Totems → Skin Forever Totems.
 
 ## Immersion 0.13.2 (tyler-beach)
 

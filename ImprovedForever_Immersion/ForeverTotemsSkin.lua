@@ -1,6 +1,7 @@
--- Soft-dep skin for Forever Totems (bverger/ForeverTotems, MIT): restyle its
--- bar to Immersion's gold / diamond language without vendoring their code.
--- Install ForeverTotems separately; this module no-ops when it is missing.
+-- Soft-dep skin for Forever Totems (vendored MIT in forever-deck; upstream
+-- bverger/ForeverTotems): reinforce Immersion gold / diamond chrome when
+-- foreverTotemsSkin is on. The vendored 1.1.0 bar already matches; this still
+-- helps a stock CurseForge build. No-ops when ForeverTotems is missing.
 -- Setting foreverTotemsSkin (Immersion → Bottom → Totems).
 local IF = ImprovedForever
 local IN = IF.Interface

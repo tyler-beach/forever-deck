@@ -2,6 +2,7 @@
 each on its own version, its TOC's):
     dist/ImprovedForever-<version>.zip           the core
     dist/ImprovedForever_<Module>-<version>.zip  each module
+    dist/ForeverTotems-<version>.zip             vendored companions
     dist/ImprovedForever-All.zip                 every addon, for a manual install
                                                  (only when no addon is named)
 
@@ -22,6 +23,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CORE = "ImprovedForever"
 CORE_EXTRA = ["LICENSE-EasyController.md", "README.md", "CHANGELOG.md"]
+# Companion addons shipped in this fork (not ImprovedForever_* named).
+EXTRA_ADDONS = ["ForeverTotems"]
 
 
 def toc_of(folder):
@@ -31,42 +34,71 @@ def toc_of(folder):
     return version, listed
 
 
-def main():
+def discover_folders():
     folders = sorted(p.parent.name for p in ROOT.glob(f"{CORE}*/{CORE}*.toc") if p.stem == p.parent.name)
+    for name in EXTRA_ADDONS:
+        if (ROOT / name / f"{name}.toc").is_file() and name not in folders:
+            folders.append(name)
+    return folders
+
+
+def short_name(folder):
+    if folder == CORE:
+        return "Core"
+    if folder.startswith(CORE + "_"):
+        return folder[len(CORE) + 1:]
+    return folder
+
+
+def package_folder(folder):
+    ver, listed = toc_of(folder)
+    files = [f"{folder}.toc"] + listed
+    if (ROOT / folder / "Bindings.xml").is_file():
+        files.append("Bindings.xml")
+    if folder == CORE:
+        files += sorted(p.relative_to(ROOT / folder).as_posix() for p in (ROOT / folder / "textures").glob("*.tga"))
+    files += sorted(p.relative_to(ROOT / folder).as_posix() for p in (ROOT / folder / "Fonts").glob("*") if p.is_file())
+    files += sorted(p.relative_to(ROOT / folder).as_posix() for p in (ROOT / folder).glob("*/LICENSE-*.txt"))
+    # Vendored companions keep LICENSE in-folder; IF modules get the repo root copy.
+    if (ROOT / folder / "LICENSE").is_file():
+        files.append("LICENSE")
+    missing = [f for f in files if not (ROOT / folder / f).is_file()]
+    if missing:
+        sys.exit(f"{folder}: missing files: " + ", ".join(missing))
+    entries = [(ROOT / folder / f, f"{folder}/{f}") for f in files]
+    if folder.startswith(CORE) and not (ROOT / folder / "LICENSE").is_file():
+        entries.append((ROOT / "LICENSE", f"{folder}/LICENSE"))
+    return ver, listed, entries
+
+
+def main():
+    folders = discover_folders()
     if CORE not in folders:
         sys.exit(f"No {CORE}/{CORE}.toc")
 
     wanted = set(folders)
     if sys.argv[1:]:
-        by_name = {("Core" if f == CORE else f[len(CORE):].lstrip("_")).lower(): f for f in folders}
+        by_name = {short_name(f).lower(): f for f in folders}
+        # Alias "totems" -> ForeverTotems
+        if "forevertotems" in by_name:
+            by_name["totems"] = by_name["forevertotems"]
         unknown = [a for a in sys.argv[1:] if a.lower() not in by_name]
         if unknown:
             sys.exit("No addon named " + ", ".join(unknown))
         wanted = {by_name[a.lower()] for a in sys.argv[1:]}
 
-    entries = {}      # folder: [(source, path in the zip)]
+    entries = {}
     versions = {}
     code = ""
     for folder in folders:
-        ver, listed = toc_of(folder)
+        ver, listed, packed = package_folder(folder)
         versions[folder] = ver
-        files = [f"{folder}.toc"] + listed
-        if (ROOT / folder / "Bindings.xml").is_file():
-            files.append("Bindings.xml")
-        if folder == CORE:
-            files += sorted(p.relative_to(ROOT / folder).as_posix() for p in (ROOT / folder / "textures").glob("*.tga"))
-        # (a module's own fonts, with their licence)
-        files += sorted(p.relative_to(ROOT / folder).as_posix() for p in (ROOT / folder / "Fonts").glob("*") if p.is_file())
-        # (the licences of code copied in, beside it)
-        files += sorted(p.relative_to(ROOT / folder).as_posix() for p in (ROOT / folder).glob("*/LICENSE-*.txt"))
-        missing = [f for f in files if not (ROOT / folder / f).is_file()]
-        if missing:
-            sys.exit(f"{folder}: missing files: " + ", ".join(missing))
-        entries[folder] = [(ROOT / folder / f, f"{folder}/{f}") for f in files] + [(ROOT / "LICENSE", f"{folder}/LICENSE")]
-        code += "".join((ROOT / folder / f).read_text(encoding="utf-8") for f in listed if f.endswith(".lua"))
+        entries[folder] = packed
+        # Only IF code is scanned for core texture names.
+        if folder.startswith(CORE):
+            code += "".join((ROOT / folder / f).read_text(encoding="utf-8") for f in listed if f.endswith(".lua"))
     entries[CORE] += [(ROOT / f, f"{CORE}/{f}") for f in CORE_EXTRA]
 
-    # Every texture the code names in full must be packaged (they're the core's)
     names = set(re.findall(r'"(ic_[a-z0-9_]+)"', code))
     packaged = {Path(path).stem for _, path in entries[CORE] if "/textures/" in path}
     absent = sorted(n for n in names if n not in packaged and not n.endswith("_"))
@@ -80,7 +112,7 @@ def main():
         zips[f"{CORE}-All"] = [e for files in entries.values() for e in files]
     for name, files in zips.items():
         base = name.rsplit("-", 1)[0]
-        for old in dist.glob(f"{base}-*.zip"):      # an older version of this addon's zip
+        for old in dist.glob(f"{base}-*.zip"):
             if old.stem[len(base) + 1:2 + len(base)].isdigit():
                 old.unlink()
         out = dist / f"{name}.zip"

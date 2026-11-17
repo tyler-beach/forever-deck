@@ -122,8 +122,9 @@ settings in the middle (left / right change one, Cross picks from its list on th
   ```
 
 - **Manual**: from this repo’s [Releases](https://github.com/tyler-beach/forever-deck/releases),
-  download `ImprovedForever-All-forever.zip` (every `ImprovedForever*` folder at the zip root)
-  and unzip into `World of Warcraft/_forever_/Interface/AddOns/`. Or take per-module zips /
+  download `ImprovedForever-All-forever.zip` (every `ImprovedForever*` folder plus vendored
+  companions such as `ForeverTotems` at the zip root) and unzip into
+  `World of Warcraft/_forever_/Interface/AddOns/`. Or take per-module zips /
   upstream releases from [markgravity/ImprovedForever](https://github.com/markgravity/ImprovedForever/releases).
 
 ## SteamOS / Steam Deck (PlayStation controller)
@@ -170,14 +171,14 @@ This fork feeds **RestedXP** guide kinds into `ImprovedForever_QuestTracker` as 
 
 Slash: `/if quests rxp [on\|off\|profession\|dungeon\|legacy\|waypoint\|focus\|debug]`.
 
-## Companion addons (soft-dep skins)
+## Companion addons
 
-Install separately via WoWDeck / CurseForge — this fork does **not** bundle them:
+| Addon | Role | In All pack? | IF hook |
+|---|---|---|---|
+| [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling routes | No — install separately | Quest Tracker modules + nameplate highlights |
+| **Forever Totems** (vendored) | Shaman totem bar / Call sets / macros (best gamepad fit) | **Yes** — `ForeverTotems/` from [bverger/ForeverTotems](https://github.com/bverger/ForeverTotems) (MIT, see `ForeverTotems/VENDOR.md`) | Immersion chrome baked in; optional Immersion → Totems → **Skin Forever Totems** |
 
-| Addon | Role | IF hook |
-|---|---|---|
-| [RXPGuides](https://www.curseforge.com/wow/addons/restedxp-guide) | Leveling routes | Quest Tracker modules + nameplate highlights |
-| [Forever Totems](https://www.curseforge.com/wow/addons/forever-totems) | Shaman totem bar / Call sets / macros (best gamepad fit) | Immersion → Totems → **Skin Forever Totems** (gold / diamond chrome) |
+Manual install of the All zip drops `ForeverTotems` next to the `ImprovedForever*` folders.
 
 ## Development
 
@@ -204,7 +205,7 @@ submodule itself isn't packaged.
 - `python tools/make_library.py` regenerates the core's `ImprovedForever/RecipeData.lua` from Forever's own
   recipe tables (wago.tools).
 - The other `tools/make_*.py` regenerate the TGA textures (`ImprovedForever/textures/`).
-- `python tools/package.py` builds a zip per addon in `dist/` and `ImprovedForever-All.zip` with every addon; `python tools/package.py Wheel` builds only that one.
+- `python tools/package.py` builds a zip per addon in `dist/` (including vendored `ForeverTotems`) and `ImprovedForever-All.zip` with every addon; `python tools/package.py Wheel` builds only that one.
 - `python tools/make_module_icons.py --logos` also writes each module's CurseForge logo to `dist/logos/`.
 
 ### Releasing
