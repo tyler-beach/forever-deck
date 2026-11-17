@@ -1,0 +1,29 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+*.code-workspace
+
+# Lua local / tooling
+luac.out
+*.luac
+.luacheckrc.local
+.luarocks/
+
+# WoW client noise if syncing from an install
+*.wtf
+*.log
+Cache/
+Logs/
+Errors/
+WTF/
+Screenshots/
+Fonts/
+
+# Secrets / local env
+.env
+.env.*
+*.pem
