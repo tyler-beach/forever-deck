@@ -1,5 +1,11 @@
 # Changelog
 
+## Immersion 0.13.1 (tyler-beach)
+
+- Buff / Debuff notices no longer re-toast when an aura’s text updates (Tauren **Plainsrunning** while running).
+- Plainsrunning (spell 1299038) is ignored entirely; “Spell ID:” tooltip lines are stripped from notice text.
+- Turning the setting off clears any queued/showing notice immediately. Tip clarifies this is separate from the bottom Buff row.
+
 ## Quest Tracker 0.6.10 (tyler-beach)
 
 - Show RXP tip / instruction lines (`*` / `hideTooltip`) in the tracker — train, buy spells, profession notes, etc. (RXP keeps those off the map tooltip; they still belong on-screen).

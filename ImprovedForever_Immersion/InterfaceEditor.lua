@@ -372,10 +372,12 @@ local ITEMS = {
             .. "see when the next one can go. Off by default; the tiles show real cooldowns only.",
     }, Toggle("gcd", "Global cooldown", function() IN.GamepadBar.Apply() end)),
     Item({
-        key = "auraNotice", group = "body", section = "Sidebar/Global Tooltips", label = "Buff / Debuff",
-        tip = "A buff or debuff you gain shows as a card at the screen's top left: its icon, name, "
-            .. "kind, time and words. Several come one after another. Out of combat only.",
-    }, Toggle("auraNotice", "Buff / Debuff", function() end)),
+        key = "auraNotice", group = "body", section = "Sidebar/Global Tooltips", label = "Buff / Debuff notices",
+        tip = "A buff or debuff you gain shows as a card under the quest cards (top left): its icon, "
+            .. "name, time and words. Several come one after another. Out of combat only. Off stops "
+            .. "these cards entirely (separate from the Buff row along the bottom). Racial run buffs "
+            .. "like Tauren Plainsrunning are never announced.",
+    }, Toggle("auraNotice", "Buff / Debuff notices", function() end)),
     Item({
         key = "hideAuraTip", group = "bottom", section = "Buffs & cooldowns", label = "Hide the game's buff tooltip on the pad",
         tip = "With the controller on, the game shows a buff's tooltip by itself (its focus on the buff frame). "

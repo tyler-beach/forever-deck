@@ -4,6 +4,8 @@
 -- Several at once come one after another. Only out of combat: in a fight Forever throws on
 -- every aura read from addon code, so a gain then is not announced (and not told afterwards:
 -- the first look out of combat takes what is on you as it is). Setting auraNotice.
+-- Description-only updates (Plainsrunning's % rising as you run) refresh a card already on
+-- screen quietly — they do NOT re-toast. Racial run buffs are never announced.
 local IF = ImprovedForever
 local IN = IF.Interface
 
@@ -15,6 +17,14 @@ local BUFF, DEBUFF = { 1, 0.82, 0.45 }, { 0.9, 0.3, 0.25 }
 local DESC_WIDTH, DESC_LINES = 44, 5      -- (the words (the stats) in lines this wide, this many)
 local UP, DOWN = { 0.35, 0.9, 0.35 }, { 0.95, 0.3, 0.25 }
 local MAX_QUEUE = 6
+
+-- Forever Tauren Plainsrunning (and similar): updates every tick while moving — never toast.
+local IGNORE_SPELL_ID = {
+	[1299038] = true, -- Plainsrunning
+}
+local IGNORE_NAME = {
+	plainsrunning = true,
+}
 
 local function Secret(v)
     return type(issecretvalue) == "function" and issecretvalue(v)
@@ -55,6 +65,21 @@ local function Wrap(text, out, color)
     if cur ~= "" then out[#out + 1] = { lt = cur, lr = color[1], lg = color[2], lb = color[3] } end
 end
 
+local function IsNoisyAura(aura)
+	if not aura then
+		return true
+	end
+	local id = aura.spellId
+	if type(id) == "number" and IGNORE_SPELL_ID[id] then
+		return true
+	end
+	local name = Words(aura.name)
+	if name and IGNORE_NAME[name:lower()] then
+		return true
+	end
+	return false
+end
+
 local function Describe(aura)
     local out = {}
     local info = C_TooltipInfo
@@ -63,7 +88,8 @@ local function Describe(aura)
     if ok and type(data) == "table" and not Secret(data) and type(data.lines) == "table" then
         for i, l in ipairs(data.lines) do
             local text = Words(l.leftText)
-            if i > 1 and text and not text:lower():find("remaining") then
+            if i > 1 and text and not text:lower():find("remaining")
+				and not text:lower():find("spell id") then
                 text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
                 local c = l.leftColor
                 local color = type(c) == "table" and type(c.r) == "number" and { c.r, c.g, c.b } or { 0.78, 0.78, 0.78 }
@@ -143,12 +169,13 @@ local function Announce(c)
     if #queue < MAX_QUEUE then queue[#queue + 1] = c end
 end
 
--- known: instance id -> { apps, sig } (what was last announced). A gain is announced; so is a
--- change of what it says (Plainsrunning's speed growing as you run, a stack added): the auras the
--- event says were updated, and any whose stacks changed, are read again and compared.
+-- known: instance id -> { apps, sig }. Announce on gain and on stack increase only.
+-- Description-only changes (Plainsrunning % while running) update the visible card in place
+-- when it is already that aura — never re-queue a toast.
 local function Look(updateInfo)
     if not (IF.db and IN.Settings().auraNotice ~= false) or IF.InCombat() then
         known = nil     -- (the next look out of combat only takes what is on you)
+        current, queue = nil, {}
         return
     end
     local now = Scan()
@@ -173,21 +200,32 @@ local function Look(updateInfo)
     local was = known
     known = {}
     for id, aura in pairs(now) do
-        local old = was and was[id]
-        if not was then
-            known[id] = { apps = aura.applications, sig = Content(aura).sig }
-        elseif not old then
-            local c = Content(aura)
-            known[id] = { apps = aura.applications, sig = c.sig }
-            Announce(c)
+        if IsNoisyAura(aura) then
+            -- Track so a later non-noisy gain still works; never toast.
+            known[id] = { apps = aura.applications, sig = "", quiet = true }
         else
-            known[id] = old
-            if updated[id] or old.apps ~= aura.applications then
+            local old = was and was[id]
+            if not was then
+                known[id] = { apps = aura.applications, sig = Content(aura).sig }
+            elseif not old or old.quiet then
                 local c = Content(aura)
-                old.apps = aura.applications
-                if c.sig ~= old.sig then
-                    old.sig = c.sig
-                    Announce(c)
+                known[id] = { apps = aura.applications, sig = c.sig }
+                Announce(c)
+            else
+                known[id] = old
+                if updated[id] or old.apps ~= aura.applications then
+                    local c = Content(aura)
+                    local appsChanged = old.apps ~= aura.applications
+                    old.apps = aura.applications
+                    if c.sig ~= old.sig then
+                        old.sig = c.sig
+                        if appsChanged then
+                            Announce(c)
+                        elseif current and current.key == c.key then
+                            -- Same toast, new words (e.g. a timer line): refresh, don't re-hold.
+                            current = c
+                        end
+                    end
                 end
             end
         end
