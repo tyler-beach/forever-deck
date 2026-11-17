@@ -166,8 +166,15 @@ local ITEMS = {
         key = "nameplateFriendlyNPCs", group = "top", section = "Nameplates", label = "Friendly NPC nameplates",
         tip = "Plates over friendly NPCs (vendors, quest givers, guards) in the same look, instead of the "
             .. "game's plain green name. Turns the game's friendly NPC nameplates on; off puts your own "
-            .. "choice back. Needs the nameplates on.",
+            .. "choice back. Needs the nameplates on. Turn this on so RestedXP talk-to targets can light up.",
     }, Toggle("nameplateFriendlyNPCs", "Friendly NPC nameplates", function() IN.Nameplates.Apply() end)),
+    Item({
+        key = "nameplateRXP", group = "top", section = "Nameplates", label = "Highlight RestedXP targets",
+        tip = "When RXPGuides is loaded, the current guide step's NPCs and mobs stand out on our nameplates: "
+            .. "bright Immersion gold (talk-to) or warm orange (kill), full size, with a quest icon. Soft "
+            .. "dependency — does nothing without RestedXP. Needs nameplates on; friendly NPC plates help "
+            .. "for quest givers.",
+    }, Toggle("nameplateRXP", "Highlight RestedXP targets", function() IN.Nameplates.Apply() end)),
     Item({
         key = "nameplateHideFarNames", group = "top", section = "Nameplates", label = "Hide the game's far names",
         tip = "Over units too far away for a nameplate the game draws their names itself, tiny, in its own "

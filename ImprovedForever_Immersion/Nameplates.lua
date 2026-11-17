@@ -92,6 +92,10 @@ local function Build()
     p.mark:SetTexture(IF.TEX .. "ic_raid_marks")
     p.mark:SetSize(BADGE - 4, BADGE - 4)
     p.mark:Hide()
+    -- (RestedXP step target: quest ! left of the name, Immersion gold feel)
+    p.rxp = p:CreateTexture(nil, "OVERLAY", nil, 5)
+    p.rxp:SetSize(BADGE - 2, BADGE - 2)
+    p.rxp:Hide()
     -- (your combo points on your target's plate: five small gems in a row over its name; the same gems
     -- as the target header's, tools/make_combo_gem.py)
     p.combo = {}
@@ -337,6 +341,87 @@ local function Team(unit)
     return IN.Settings().nameplateGroupColors ~= false and Flag(UnitIsPlayer, unit) and Teammate(unit)
 end
 
+-- RestedXP current-step targets (soft-dep): bright Immersion gold / warm kill tint,
+-- full plate weight, quest icon — so the NPC to talk to reads differently than the crowd.
+local RXP_FRIEND = { 1, 0.9, 0.4 }
+local RXP_KILL = { 1, 0.55, 0.32 }
+local RXP_ICON_FRIEND = "Interface\\GossipFrame\\ActiveQuestIcon"
+local RXP_ICON_KILL = "Interface\\GossipFrame\\IncompleteQuestIcon"
+local rxpByName, rxpAt = {}, -1
+
+local function RXPTargeting()
+	local rxp = _G.RXP
+	if type(rxp) == "table" and type(rxp.targeting) == "table"
+		and type(rxp.targeting.GetCurrentTargets) == "function" then
+		return rxp.targeting
+	end
+	return nil
+end
+
+local function RXPMap()
+	if IN.Settings().nameplateRXP == false then
+		return nil
+	end
+	local now = GetTime and GetTime() or 0
+	if now - rxpAt < 0.25 then
+		return rxpByName
+	end
+	rxpAt = now
+	wipe(rxpByName)
+	local targeting = RXPTargeting()
+	if not targeting then
+		return rxpByName
+	end
+	-- Defined with `.` (no self); returns friends, mobs, unitscan, rares.
+	local ok, friends, mobs, unitscan = pcall(targeting.GetCurrentTargets)
+	if not ok then
+		return rxpByName
+	end
+	local function take(list, kind)
+		if type(list) ~= "table" then
+			return
+		end
+		for _, name in ipairs(list) do
+			if type(name) == "string" and name ~= "" and not rxpByName[name] then
+				rxpByName[name] = kind
+			end
+		end
+	end
+	-- Friend talk-to NPCs first; kill / unitscan fill the rest.
+	take(friends, "friend")
+	take(mobs, "kill")
+	take(unitscan, "kill")
+	return rxpByName
+end
+
+local function RXPKind(unit)
+	local map = RXPMap()
+	if not map or not next(map) then
+		return nil
+	end
+	local ok, name = pcall(UnitName, unit)
+	if not ok or type(name) ~= "string" or Secret(name) then
+		return nil
+	end
+	return map[name]
+end
+
+local function RXPMark(p, kind)
+	local tex = p.rxp
+	if not tex then
+		return
+	end
+	if not kind then
+		tex:Hide()
+		return
+	end
+	tex:SetTexture(kind == "friend" and RXP_ICON_FRIEND or RXP_ICON_KILL)
+	local width = p.name:GetStringWidth() or 0
+	tex:ClearAllPoints()
+	tex:SetPoint("RIGHT", p.name, "CENTER", -width / 2 - 8, 0)
+	tex:Show()
+end
+
 -- The name's colour: NPCs and mobs in the header's gold, other players in
 -- their class colour (white when it can't be read; gold with the setting
 -- off), your party and raid in the team green.
@@ -360,15 +445,24 @@ local function Refresh(p)
     if not unit then return end
     StyleName(p)
     local target = Flag(IsTarget, unit)
+    local rxp = RXPKind(unit)
     Try(p.name.SetText, p.name, IN.DisplayName(unit))
     Mark(p, unit)
+    RXPMark(p, rxp)
     p.comboN = nil
     Combo(p, unit)
     if Flag(UnitIsDeadOrGhost, unit) then
         p.name:SetTextColor(0.5, 0.5, 0.5)
     else
-        local r, g, b = NameColor(unit)
-        if not (target or Team(unit)) then r, g, b = Mute(r, g, b) end
+        local r, g, b
+        if rxp == "friend" then
+            r, g, b = RXP_FRIEND[1], RXP_FRIEND[2], RXP_FRIEND[3]
+        elseif rxp == "kill" then
+            r, g, b = RXP_KILL[1], RXP_KILL[2], RXP_KILL[3]
+        else
+            r, g, b = NameColor(unit)
+            if not (target or Team(unit)) then r, g, b = Mute(r, g, b) end
+        end
         p.name:SetTextColor(r, g, b)
     end
     -- (the health line off, for NPCs and players apart: the name alone)
@@ -421,8 +515,15 @@ local function Refresh(p)
     end
     local r, g, b = TH.NameplateColor(unit, IN.Settings().nameplateClassColors == false)
     local team = Team(unit)
-    if team then r, g, b = TEAM[1], TEAM[2], TEAM[3] end
-    if not (target or team) then r, g, b = Mute(r, g, b) end
+    if team then
+        r, g, b = TEAM[1], TEAM[2], TEAM[3]
+    elseif rxp == "friend" then
+        r, g, b = RXP_FRIEND[1], RXP_FRIEND[2], RXP_FRIEND[3]
+    elseif rxp == "kill" then
+        r, g, b = RXP_KILL[1], RXP_KILL[2], RXP_KILL[3]
+    elseif not target then
+        r, g, b = Mute(r, g, b)
+    end
     p.bar:SetStatusBarColor(r, g, b)
     if showBar then
         Level(p, unit)
@@ -430,10 +531,11 @@ local function Refresh(p)
         p.skull:Hide()
         p.level:SetText("")
     end
-    -- (your target's at full size, the others softer: eased on a change)
-    p.goalAlpha = target and 1 or OTHER_ALPHA
-    p.goalScale = target and 1 or OTHER_SCALE
-    p:SetFrameLevel(target and 20 or 10)
+    -- (your target's at full size; RestedXP step targets too, so talk-to NPCs read in a crowd)
+    local focus = target or rxp
+    p.goalAlpha = focus and 1 or OTHER_ALPHA
+    p.goalScale = focus and 1 or OTHER_SCALE
+    p:SetFrameLevel(target and 20 or (rxp and 15 or 10))
     -- (a cast's end missed: gone with it)
     if p.castKind and not Casting(unit) then p.castKind = nil end
     if not p.alpha then

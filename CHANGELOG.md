@@ -1,5 +1,10 @@
 # Changelog
 
+## Immersion 0.13.2 (tyler-beach)
+
+- **Highlight RestedXP targets** on Immersion nameplates (soft-dep `RXPGuides`): current-step talk-to NPCs in bright gold with a quest icon, kill targets in warm orange, full plate weight so they read in a crowd.
+- Uses `RXP.targeting.GetCurrentTargets()`; Immersion → Nameplates toggle (on by default). Friendly NPC nameplates recommended for quest givers.
+
 ## Immersion 0.13.1 (tyler-beach)
 
 - Buff / Debuff notices no longer re-toast when an aura’s text updates (Tauren **Plainsrunning** while running).
