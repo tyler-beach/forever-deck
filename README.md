@@ -1,7 +1,7 @@
 # Improved Forever (tyler-beach fork)
 
 > **Repo note:** `tyler-beach/forever-deck` was originally a ForeverDeck HUD scaffold. It has been
-> **repurposed** as the private home for this ImprovedForever fork (RestedXP → Quest Tracker
+> **repurposed** as the public home for this ImprovedForever fork (RestedXP → Quest Tracker
 > integration). Upstream remains [markgravity/ImprovedForever](https://github.com/markgravity/ImprovedForever).
 > A parallel empty `tyler-beach/improved-forever` repo may receive a mirror when the Cursor GitHub App
 > can access it.
@@ -100,13 +100,31 @@ settings in the middle (left / right change one, Cross picks from its list on th
 
 ## Install
 
-- **CurseForge app**: search *Improved Forever* and install the modules you want (*Improved
-  Forever: Wheel*, *Improved Forever: Auction*...); each brings the core along.
-- **Manual**: download the core's zip (`ImprovedForever-<version>.zip`) and each module's own
-  (`ImprovedForever_<Module>-<version>.zip`) from
-  [Releases](https://github.com/markgravity/ImprovedForever/releases) and unzip them into
-  `World of Warcraft/_forever_/Interface/AddOns/` so you get `AddOns/ImprovedForever/`,
-  `AddOns/ImprovedForever_Wheel/`... (remove an old `AddOns/ImprovedController/`).
+- **CurseForge app** (upstream): search *Improved Forever* and install the modules you want
+  (*Improved Forever: Wheel*, *Improved Forever: Auction*...); each brings the core along.
+  Upstream does **not** include this fork’s RestedXP Quest Tracker modules.
+- **WoWDeck** (Steam Deck / Decky — [sigboe/wowdeck](https://github.com/sigboe/wowdeck)):
+  **Get Addons → Manual Install**, paste exactly:
+
+  ```
+  tyler-beach/forever-deck
+  ```
+
+  (also fine: `https://github.com/tyler-beach/forever-deck`). WoWDeck resolves the latest
+  GitHub Release that has a Forever-compatible zip (`*-forever.zip` plus a BigWigs-style
+  `release.json`). Bare source / a repo with no such release will fail
+  (“No addon was found…” / “no release for your WoW version”).
+
+  Direct zip (installs once; no GitHub update source):
+
+  ```
+  https://github.com/tyler-beach/forever-deck/releases/latest/download/ImprovedForever-All-forever.zip
+  ```
+
+- **Manual**: from this repo’s [Releases](https://github.com/tyler-beach/forever-deck/releases),
+  download `ImprovedForever-All-forever.zip` (every `ImprovedForever*` folder at the zip root)
+  and unzip into `World of Warcraft/_forever_/Interface/AddOns/`. Or take per-module zips /
+  upstream releases from [markgravity/ImprovedForever](https://github.com/markgravity/ImprovedForever/releases).
 
 ## SteamOS / Steam Deck (PlayStation controller)
 
