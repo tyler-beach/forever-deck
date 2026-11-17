@@ -59,9 +59,16 @@ local ITEMS = {
         function(on) IQT.SetObjectiveSound(on) end, "Objective sound")),
     Item({
         key = "rxpGuide", group = "rxp", label = "RestedXP leveling steps",
-        tip = "When RXPGuides is loaded, show active leveling steps as tracker blocks above Blizzard quest watches. Soft dependency: safe if RestedXP is missing.",
+        tip = "When RXPGuides is loaded, show active leveling steps as tracker blocks above Blizzard quest watches "
+            .. "(header “RestedXP Guide”). Soft dependency: safe if RestedXP is missing. /if quests rxp debug",
     }, OnOff(function() return IQT.Settings().rxpGuide end,
         function(on) IQT.SetRXPGuide(on) end, "RestedXP leveling steps")),
+    Item({
+        key = "rxpHideWindow", group = "rxp", label = "Hide RestedXP window",
+        tip = "Hide RXP’s own guide panel so only the IF tracker shows steps (Steam Deck). "
+            .. "Uses RXP’s Hide Window setting. Turn off to keep both, or left-click an RXP block to peek.",
+    }, OnOff(function() return IQT.Settings().rxpHideWindow ~= false end,
+        function(on) IQT.SetRXPHideWindow(on) end, "Hide RestedXP window")),
     Item({
         key = "rxpProfession", group = "rxp", label = "RestedXP profession steps",
         tip = "Profession guides (#guideKind profession / Profession group): active steps or saved-progress glance. Soft-deps on RXPGuides + optional profession packs.",

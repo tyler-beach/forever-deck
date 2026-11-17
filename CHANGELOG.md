@@ -1,5 +1,11 @@
 # Changelog
 
+## Quest Tracker 0.6.11 (tyler-beach)
+
+- **Hide RestedXP’s own guide window** by default when IF shows RXP steps (Deck OLED). Setting: Quest Tracker → RestedXP → Hide RestedXP window; `/if quests rxp hide [on|off]`.
+- Compact IF list: current + tip steps first, then at most 3 stickies (native RXP window was dumping every sticky).
+- Resolve guide kind via `currentGuide` when `step.guide` is missing; richer `/if quests rxp debug`.
+
 ## Map 0.8.0 (tyler-beach)
 
 - **RestedXP path lines** on the world map: thick Immersion-gold polylines (player → arrow target + same-zone gotos when the step has no RXP `.line` segments). Soft-dep `RXPGuides`.

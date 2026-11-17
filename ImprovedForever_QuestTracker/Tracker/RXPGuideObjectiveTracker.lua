@@ -9,7 +9,10 @@ local IF = ImprovedForever
 
 -- Match RXP's sticky + current + tip window; tips/train/"buy spells" are often
 -- separate activeSteps entries or * lines inside a step.
+-- Deck compact: keep current + tips first; cap stickies so the IF tracker
+-- doesn't mirror RXP's full sticky dump (native window is hidden instead).
 local MAX_STEPS = 8
+local MAX_STICKY = 3
 local MAX_OBJECTIVES = 12
 local MAX_GLANCE_GUIDES = 2
 local TICK_SECONDS = 0.5
@@ -226,11 +229,59 @@ local function ClassifyGuide(guide)
 	return "leveling"
 end
 
+-- RXP activeSteps often omit step.guide; fall back to currentGuide.
+local function StepGuide(step)
+	if type(step) == "table" and type(step.guide) == "table" then
+		return step.guide
+	end
+	local rxp = GetRXPAddon()
+	return rxp and rxp.currentGuide or nil
+end
+
 local function ClassifyStep(step)
 	if type(step) ~= "table" then
 		return "leveling"
 	end
-	return ClassifyGuide(step.guide)
+	return ClassifyGuide(StepGuide(step))
+end
+
+-- Hide RXP's own guide window when IF is showing the steps (Deck OLED).
+-- Uses RXP's hideGuideWindow profile flag — same as their Settings → Hide Window.
+local function ApplyHideRXPWindow()
+	local wantHide = IQT.Settings().rxpHideWindow ~= false and KindEnabled("leveling")
+	local rxp = GetRXPAddon()
+	local profile = rxp and rxp.settings and rxp.settings.profile
+	if type(profile) == "table" then
+		if wantHide and not profile.hideGuideWindow then
+			profile.hideGuideWindow = true
+			if _G.RXPFrame and _G.RXPFrame.SetShown then
+				_G.RXPFrame:SetShown(false)
+			end
+			if rxp.v2 and rxp.v2.events and rxp.v2.events.Trigger then
+				pcall(function()
+					rxp.v2.events:Trigger("GuideWindowRefresh", "visibility", false)
+				end)
+			end
+		elseif not wantHide and profile.hideGuideWindow and IQT.Settings().rxpHideWindow == false then
+			-- Only re-show if the user turned our toggle off (don't fight a prior RXP hide).
+			profile.hideGuideWindow = false
+			if _G.RXPFrame and _G.RXPFrame.SetShown then
+				_G.RXPFrame:SetShown(true)
+			end
+			if rxp.v2 and rxp.v2.events and rxp.v2.events.Trigger then
+				pcall(function()
+					rxp.v2.events:Trigger("GuideWindowRefresh", "visibility", true)
+				end)
+			end
+		end
+	elseif wantHide and _G.RXPFrame and _G.RXPFrame.Hide then
+		-- No AceDB profile reachable — soft-hide the classic frame only.
+		_G.RXPFrame:Hide()
+	end
+end
+
+function IQT.ApplyHideRXPWindow()
+	ApplyHideRXPWindow()
 end
 
 function IQT.RXPDetectPacks(force)
@@ -311,14 +362,32 @@ local function CollectActiveStepsOfKind(wantKind)
 	if type(frame) ~= "table" or type(frame.activeSteps) ~= "table" then
 		return nil, "api"
 	end
-	local out = {}
+	-- Prefer current + tip steps, then incomplete stickies (Deck-readable).
+	local current, tips, stickies = {}, {}, {}
 	for _, step in ipairs(frame.activeSteps) do
 		if StepIsShown(step) and ClassifyStep(step) == wantKind then
-			out[#out + 1] = step
-			if #out >= MAX_STEPS then
-				break
+			if step.tip then
+				tips[#tips + 1] = step
+			elseif step.sticky then
+				stickies[#stickies + 1] = step
+			else
+				current[#current + 1] = step
 			end
 		end
+	end
+	local out = {}
+	for _, step in ipairs(current) do
+		if #out >= MAX_STEPS then break end
+		out[#out + 1] = step
+	end
+	for _, step in ipairs(tips) do
+		if #out >= MAX_STEPS then break end
+		out[#out + 1] = step
+	end
+	local stickyCap = math.min(MAX_STICKY, MAX_STEPS - #out)
+	for i, step in ipairs(stickies) do
+		if i > stickyCap or #out >= MAX_STEPS then break end
+		out[#out + 1] = step
 	end
 	return out
 end
@@ -480,8 +549,9 @@ local function AddStepToModule(self, step, index, idOffset)
 
 	local added = 0
 	local guideName
-	if type(step.guide) == "table" then
-		guideName = step.guide.displayname or step.guide.name
+	local guide = StepGuide(step)
+	if type(guide) == "table" then
+		guideName = guide.displayname or guide.name
 	elseif type(RXPCData) == "table" then
 		guideName = RXPCData.currentGuideName
 	end
@@ -524,6 +594,7 @@ local function EnsureTicker()
 			MaybeReportMissing()
 			return
 		end
+		ApplyHideRXPWindow()
 		for _, kind in ipairs(KINDS) do
 			if KindEnabled(kind) then
 				local steps = CollectStepsForKind(kind)
@@ -551,6 +622,9 @@ local function BindKindMixin(mixin, kind)
 		MaybeReportApi(kind)
 		IQT.RXPDetectPacks(true)
 		EnsureTicker()
+		if kind == "leveling" then
+			ApplyHideRXPWindow()
+		end
 	end
 	function mixin:OnEvent()
 		self:MarkDirty()
@@ -561,6 +635,8 @@ local function BindKindMixin(mixin, kind)
 				rootDescription:SetTag(meta.menuTag)
 				rootDescription:CreateTitle(block.name or meta.header)
 				rootDescription:CreateButton("Open RestedXP window", function()
+					IQT.Settings().rxpHideWindow = false
+					ApplyHideRXPWindow()
 					if _G.RXPFrame and _G.RXPFrame.Show then
 						_G.RXPFrame:Show()
 					else
@@ -571,8 +647,11 @@ local function BindKindMixin(mixin, kind)
 					IQT.SetRXPKind(kind, false)
 				end)
 			end)
-		elseif _G.RXPFrame and _G.RXPFrame.Show then
-			_G.RXPFrame:Show()
+		else
+			-- Left click: briefly show native RXP window without changing the hide setting permanently.
+			if _G.RXPFrame and _G.RXPFrame.Show then
+				_G.RXPFrame:Show()
+			end
 		end
 	end
 	function mixin:LayoutContents()
@@ -582,6 +661,9 @@ local function BindKindMixin(mixin, kind)
 		if not IQT.RXPAvailable() then
 			MaybeReportMissing()
 			return
+		end
+		if kind == "leveling" then
+			ApplyHideRXPWindow()
 		end
 		local steps, err = CollectStepsForKind(kind)
 		if err == "api" then
@@ -642,12 +724,23 @@ function IQT.SetRXPQuestFocus(on)
 	IQT.Print("RestedXP quest SuperTrack when known: " .. (on and "on" or "off"))
 end
 
+function IQT.SetRXPHideWindow(on)
+	IQT.Settings().rxpHideWindow = not not on
+	ApplyHideRXPWindow()
+	IQT.Print("Hide RestedXP guide window: " .. (on and "on" or "off"))
+end
+
 function IQT.RXPDebug()
 	local det = IQT.RXPDetectPacks(true)
+	local frame = _G.RXPFrame
+	local rawN = (type(frame) == "table" and type(frame.activeSteps) == "table") and #frame.activeSteps or -1
 	IQT.Print("RXP available: " .. tostring(IQT.RXPAvailable())
 		.. ", activeSteps API: " .. tostring(IQT.RXPHasApi())
+		.. ", raw activeSteps: " .. tostring(rawN)
 		.. ", RXP table: " .. tostring(det.rxpAddonTable)
 		.. ", GetGuideProgress: " .. tostring(det.hasGuideProgressApi))
+	IQT.Print("Hide RXP window: " .. tostring(IQT.Settings().rxpHideWindow ~= false)
+		.. ", RXPFrame shown: " .. tostring(frame and frame.IsShown and frame:IsShown()))
 	IQT.Print("Packs loaded: " .. (#det.addons > 0 and table.concat(det.addons, ", ") or "(none of the known folder names)"))
 	for _, kind in ipairs(KINDS) do
 		local meta = KIND_META[kind]
@@ -663,7 +756,8 @@ function IQT.RXPDebug()
 		))
 		if steps then
 			for i, step in ipairs(steps) do
-				local g = step.guide and (step.guide.displayname or step.guide.name) or "?"
+				local g = StepGuide(step)
+				local gname = g and (g.displayname or g.name) or "?"
 				local lines, tips = 0, 0
 				for _, el in ipairs(step.elements or {}) do
 					if ElementLineText(el) then
@@ -672,7 +766,7 @@ function IQT.RXPDebug()
 					end
 				end
 				IQT.Print(("  %d. [%s] %s%s — %d lines (%d tip/textOnly)%s"):format(
-					i, tostring(g), StepTitle(step, i),
+					i, tostring(gname), StepTitle(step, i),
 					step.sticky and " sticky" or (step.tip and " tip" or ""),
 					lines, tips,
 					step.hidewindow and " [hidden]" or ""

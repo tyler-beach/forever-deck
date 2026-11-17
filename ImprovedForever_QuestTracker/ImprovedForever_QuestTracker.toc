@@ -2,7 +2,7 @@
 ## Title: Improved Forever: Quest Tracker
 ## Notes: The objective tracker, rebuilt as the game's own: sorted quests, RestedXP leveling/profession/dungeon/legacy guide steps when RXPGuides is loaded, objective complete sound, controller support.
 ## Author: markg
-## Version: 0.6.10
+## Version: 0.6.11
 ## X-Website: https://github.com/tyler-beach/forever-deck
 ## X-License: MIT
 ## X-Curse-Project-ID: 1736883

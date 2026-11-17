@@ -138,6 +138,7 @@ local DEFAULTS = {
 	rxpLegacy = true,      -- legacy-guide steps (when RXP ships / imports them)
 	rxpWaypoint = true,    -- mirror RXPG_ARROW into Blizzard user waypoint
 	rxpQuestFocus = false, -- SuperTrack matching questId if in the log
+	rxpHideWindow = true,  -- hide RXP's own guide window; IF tracker shows the steps
 }
 
 -- Per character, in Improved Forever's own (IF.charDB.questTracker)
