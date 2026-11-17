@@ -1,5 +1,13 @@
 # Changelog
 
+## Quest Tracker 0.6.9 (tyler-beach)
+
+- Dungeon + Legacy modules: **RestedXP Dungeon** / **RestedXP Legacy** (same IF feel as leveling/profession).
+- Kind classifier: group/subgroup/`#guideKind`/step tags (`enabledungeon`, profession, Legacy…).
+- Soft-deps for dungeon/legacy pack folder names; `/if quests rxp debug` reports all four kinds.
+- Settings + `/if quests rxp dungeon|legacy [on|off]`.
+- Repo home documented as repurposed `tyler-beach/forever-deck`.
+
 ## Quest Tracker 0.6.8 (tyler-beach)
 
 - Profession guides: new **RestedXP Profession** tracker module for `#guideKind profession` / Profession Leveling group steps.

@@ -64,9 +64,19 @@ local ITEMS = {
         function(on) IQT.SetRXPGuide(on) end, "RestedXP leveling steps")),
     Item({
         key = "rxpProfession", group = "rxp", label = "RestedXP profession steps",
-        tip = "Show profession-guide steps (#guideKind profession / Profession Leveling group): from the active RXP window, or a glance at saved progress while leveling. Soft-deps on RXPGuides and optional profession packs.",
+        tip = "Profession guides (#guideKind profession / Profession group): active steps or saved-progress glance. Soft-deps on RXPGuides + optional profession packs.",
     }, OnOff(function() return IQT.Settings().rxpProfession end,
         function(on) IQT.SetRXPProfession(on) end, "RestedXP profession steps")),
+    Item({
+        key = "rxpDungeon", group = "rxp", label = "RestedXP dungeon steps",
+        tip = "Dungeon guides (e.g. RestedXP Forever Dungeon Guide group, #guideKind dungeon, .enabledungeon steps): active or progress glance.",
+    }, OnOff(function() return IQT.Settings().rxpDungeon end,
+        function(on) IQT.SetRXPDungeon(on) end, "RestedXP dungeon steps")),
+    Item({
+        key = "rxpLegacy", group = "rxp", label = "RestedXP legacy steps",
+        tip = "Legacy guides (group/name contains Legacy, or #guideKind legacy) when RXP ships or you import them.",
+    }, OnOff(function() return IQT.Settings().rxpLegacy end,
+        function(on) IQT.SetRXPLegacy(on) end, "RestedXP legacy steps")),
     Item({
         key = "rxpWaypoint", group = "rxp", label = "Sync Blizzard waypoint",
         tip = "Mirror the RestedXP arrow target into the Blizzard user waypoint so Forever gamepad navigation points at the same place.",

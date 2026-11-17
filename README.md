@@ -1,3 +1,11 @@
+# Improved Forever (tyler-beach fork)
+
+> **Repo note:** `tyler-beach/forever-deck` was originally a ForeverDeck HUD scaffold. It has been
+> **repurposed** as the private home for this ImprovedForever fork (RestedXP → Quest Tracker
+> integration). The ForeverDeck addon tree was removed from `main`. Upstream remains
+> [markgravity/ImprovedForever](https://github.com/markgravity/ImprovedForever). A parallel empty
+> `tyler-beach/improved-forever` repo may receive a mirror when the Cursor GitHub App can access it.
+
 # Improved Forever - Controller & Gamepad
 
 The **controller / gamepad** addon for **WoW Forever**: quality-of-life tweaks that make playing
@@ -7,7 +15,7 @@ Controller and Wheel works with the mouse and keyboard too: the windows follow w
 (the pad's legend and cursor with the pad; buttons to click, the wheel to scroll, tooltips on hover
 and Esc with the mouse).
 
-Free on [CurseForge](https://www.curseforge.com/wow/addons/improved-forever).
+Upstream is free on [CurseForge](https://www.curseforge.com/wow/addons/improved-forever).
 
 <p align="center">
   <img src="media/wheel.webp" width="200" alt="Radial wheels">
@@ -117,21 +125,26 @@ of that half.
 
 ## RestedXP guide steps (Quest Tracker)
 
-This tyler-beach fork feeds **RestedXP** leveling and profession steps into `ImprovedForever_QuestTracker`
-as first-class objective-tracker modules (`Tracker/RXPGuideObjectiveTracker.*`).
+This fork feeds **RestedXP** guide kinds into `ImprovedForever_QuestTracker` as IF modules
+(`Tracker/RXPGuideObjectiveTracker.*`).
+
+| Module header | Kind | Classification |
+|---|---|---|
+| RestedXP Guide | leveling / speedrun | default (not profession/dungeon/legacy) |
+| RestedXP Profession | profession | `#guideKind profession` or group contains “profession” |
+| RestedXP Dungeon | dungeon | group/subgroup “Dungeon Guide”, `#guideKind dungeon`, `.enabledungeon` / `.dungeon` steps |
+| RestedXP Legacy | legacy | group/name “Legacy”, `#guideKind legacy` |
 
 | Behavior | Detail |
 |---|---|
-| Soft dependency | `OptionalDeps: RXPGuides` + known profession pack folder names — loads cleanly if missing |
-| Placement | **RestedXP Guide** (leveling) and **RestedXP Profession** render **above** Blizzard quest watches; stock watches unchanged |
-| Leveling source | Non-profession entries in `RXPFrame.activeSteps` |
-| Profession source | Profession-classified active steps, or a glance at saved progress (`RXP.GetGuideProgress`) for `#guideKind profession` guides while leveling |
-| Packages detected | `RXPGuides` (bundled Classic Herbalism/Mining/Skinning; Forever via import/shop), plus optional `RXPGuides_Professions`, `RXP_Professions`, `RestedXP_Professions`, `RXPProfessionGuides`, … — listed by `/if quests rxp debug` |
-| Waypoint sync | Optional Blizzard user waypoint from `RXPG_ARROW` (gamepad-friendly Forever nav) |
-| Quest focus | Optional SuperTrack when a step exposes `questId` in the log (off by default) |
-| Gamepad | Blizzard quest rows keep pad-focus mirror; RXP blocks are visual / mouse |
+| Soft dependency | `OptionalDeps: RXPGuides` + known pack folder names — loads cleanly if missing |
+| Placement | All four modules above Blizzard quest watches; stock watches unchanged |
+| Active source | Classified entries in `RXPFrame.activeSteps` |
+| Glance | While another kind is current, profession/dungeon/legacy can show saved progress via `RXP.GetGuideProgress` (≤2 guides each) |
+| Packs | `/if quests rxp debug` lists loaded addons + registered guide counts per kind |
+| Waypoint / focus | Optional `RXPG_ARROW` → Blizzard user waypoint; optional quest SuperTrack |
 
-Slash: `/if quests rxp [on\|off]`, `/if quests rxp profession [on\|off]`, `/if quests rxp waypoint|focus|debug`.
+Slash: `/if quests rxp [on\|off\|profession\|dungeon\|legacy\|waypoint\|focus\|debug]`.
 
 ## Development
 

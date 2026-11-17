@@ -1,15 +1,15 @@
 ## Interface: 16001, 16002, 16003, 16100, 16101, 16200
 ## Title: Improved Forever: Quest Tracker
-## Notes: The objective tracker, rebuilt as the game's own: sorted quests (zone, level, title, distance, completed), RestedXP leveling + profession guide steps when RXPGuides is loaded, an objective complete sound, full controller support.
+## Notes: The objective tracker, rebuilt as the game's own: sorted quests, RestedXP leveling/profession/dungeon/legacy guide steps when RXPGuides is loaded, objective complete sound, controller support.
 ## Author: markg
-## Version: 0.6.8
-## X-Website: https://github.com/tyler-beach/improved-forever
+## Version: 0.6.9
+## X-Website: https://github.com/tyler-beach/forever-deck
 ## X-License: MIT
 ## X-Curse-Project-ID: 1736883
 ## IconTexture: Interface\AddOns\ImprovedForever\textures\ic_mod_quests
 ## Group: ImprovedForever
 ## Dependencies: ImprovedForever
-## OptionalDeps: Blizzard_ObjectiveTracker, RXPGuides, RXPGuides_Professions, RXPGuides_Profession, RXP_Professions, RestedXP_Professions, RXPProfessionGuides
+## OptionalDeps: Blizzard_ObjectiveTracker, RXPGuides, RXPGuides_Professions, RXPGuides_Profession, RXP_Professions, RestedXP_Professions, RXPProfessionGuides, RXPGuides_Dungeon, RXPGuides_Dungeons, RXP_Dungeon, RestedXP_Dungeon, RXPGuides_Legacy, RXP_Legacy, RestedXP_Legacy
 
 Core.lua
 Sort.lua

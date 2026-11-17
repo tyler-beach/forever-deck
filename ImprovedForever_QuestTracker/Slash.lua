@@ -37,11 +37,10 @@ local function PrintStatus()
 	IQT.Print("/if quests menu - open the sort menu (also bindable in Key Bindings > AddOns)")
 	IQT.Print("/if quests debug - list tracked quests and whether the tracker shows them")
 	IQT.Print("/if quests debug rows - toggle each quest's place and distance on its header")
-	IQT.Print("/if quests rxp [on|off] - show RestedXP leveling steps in the tracker")
-	IQT.Print("/if quests rxp profession [on|off] - show RestedXP profession-guide steps")
-	IQT.Print("/if quests rxp waypoint [on|off] - sync Blizzard user waypoint to RXP arrow")
-	IQT.Print("/if quests rxp focus [on|off] - SuperTrack matching quest when RXP exposes questId")
-	IQT.Print("/if quests rxp debug - RestedXP bridge status + detected profession packs")
+	IQT.Print("/if quests rxp [on|off] - show RestedXP leveling steps")
+	IQT.Print("/if quests rxp profession|dungeon|legacy [on|off] - guide-kind sections")
+	IQT.Print("/if quests rxp waypoint|focus [on|off] - waypoint / SuperTrack helpers")
+	IQT.Print("/if quests rxp debug - status + detected packs per kind")
 	IQT.Print("Or use the filter button on the Quests header, or the Quest Tracker tab (/if).")
 end
 
@@ -71,6 +70,10 @@ ImprovedForever.AddCommand("quests", function(args)
 			IQT.RXPDebug()
 		elseif arg == "profession" or arg == "prof" then
 			IQT.SetRXPProfession(ParseOnOff(arg2, db.rxpProfession))
+		elseif arg == "dungeon" or arg == "dung" then
+			IQT.SetRXPDungeon(ParseOnOff(arg2, db.rxpDungeon))
+		elseif arg == "legacy" then
+			IQT.SetRXPLegacy(ParseOnOff(arg2, db.rxpLegacy))
 		elseif arg == "waypoint" then
 			IQT.SetRXPWaypoint(ParseOnOff(arg2, db.rxpWaypoint))
 		elseif arg == "focus" then
@@ -78,7 +81,7 @@ ImprovedForever.AddCommand("quests", function(args)
 		elseif arg == "on" or arg == "off" or arg == nil or arg == "" then
 			IQT.SetRXPGuide(ParseOnOff(arg, db.rxpGuide))
 		else
-			IQT.Print("usage: /if quests rxp [on|off|profession|waypoint|focus|debug]")
+			IQT.Print("usage: /if quests rxp [on|off|profession|dungeon|legacy|waypoint|focus|debug]")
 		end
 	elseif cmd == "menu" then
 		ImprovedForever_ToggleQuestSort()

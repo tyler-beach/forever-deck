@@ -1,63 +1,106 @@
 -- RestedXP → ImprovedForever Quest Tracker bridge.
--- Soft-depends on RXPGuides (+ optional profession packs): active leveling
--- steps and profession-guide steps appear as native IF objective-tracker
--- modules above Blizzard quest watches.
--- Does not write into IFQuestCache / Blizzard quest objects (taint-safe).
--- Guide step text is display-only at runtime; never persisted to SavedVariables.
+-- Soft-depends on RXPGuides (+ optional profession/dungeon/legacy packs).
+-- Four IF modules: Leveling, Profession, Dungeon, Legacy — native tracker
+-- blocks above Blizzard quest watches. Taint-safe (no IFQuestCache writes).
+-- Guide text is display-only; never persisted to SavedVariables.
 
 local addonName, IQT = ...
 local IF = ImprovedForever
 
-local MODULE = "RXPGuide"
-local MODULE_PROF = "RXPProfession"
 local MAX_STEPS = 3
 local MAX_OBJECTIVES = 8
-local MAX_PROF_GUIDES = 2
+local MAX_GLANCE_GUIDES = 2
 local TICK_SECONDS = 0.5
 
--- Soft-dep folder names for profession guide packs (plus RXPGuides itself,
--- which ships free Herbalism/Mining/Skinning on Classic TOC; Forever packs
--- often arrive via /rxp import into RXPGuides or a shop zip).
-local PROFESSION_PACK_ADDONS = {
-	"RXPGuides",
-	"RXPGuides_Professions",
-	"RXPGuides_Profession",
-	"RXP_Professions",
-	"RXP_Profession",
-	"RestedXP_Professions",
-	"RestedXP_Profession",
-	"RXPProfessionGuides",
-	"RXPGuides_ProfessionLeveling",
+local KINDS = { "leveling", "profession", "dungeon", "legacy" }
+
+local KIND_META = {
+	leveling = {
+		module = "RXPGuide",
+		header = "RestedXP Guide",
+		setting = "rxpGuide",
+		frame = "IFRXPGuideObjectiveTracker",
+		mixin = "IFRXPGuideObjectiveTrackerMixin",
+		idOffset = 0,
+		menuTag = "MENU_RXP_GUIDE_TRACKER",
+		packs = { "RXPGuides" },
+	},
+	profession = {
+		module = "RXPProfession",
+		header = "RestedXP Profession",
+		setting = "rxpProfession",
+		frame = "IFRXPProfessionObjectiveTracker",
+		mixin = "IFRXPProfessionObjectiveTrackerMixin",
+		idOffset = 700000,
+		menuTag = "MENU_RXP_PROFESSION_TRACKER",
+		packs = {
+			"RXPGuides", "RXPGuides_Professions", "RXPGuides_Profession",
+			"RXP_Professions", "RXP_Profession", "RestedXP_Professions",
+			"RestedXP_Profession", "RXPProfessionGuides", "RXPGuides_ProfessionLeveling",
+		},
+		events = { "SKILL_LINES_CHANGED", "TRADE_SKILL_SHOW" },
+	},
+	dungeon = {
+		module = "RXPDungeon",
+		header = "RestedXP Dungeon",
+		setting = "rxpDungeon",
+		frame = "IFRXPDungeonObjectiveTracker",
+		mixin = "IFRXPDungeonObjectiveTrackerMixin",
+		idOffset = 800000,
+		menuTag = "MENU_RXP_DUNGEON_TRACKER",
+		packs = {
+			"RXPGuides", "RXPGuides_Dungeon", "RXPGuides_Dungeons",
+			"RXP_Dungeon", "RXP_Dungeons", "RestedXP_Dungeon",
+			"RestedXP_Dungeons", "RXPDungeonGuides",
+		},
+	},
+	legacy = {
+		module = "RXPLegacy",
+		header = "RestedXP Legacy",
+		setting = "rxpLegacy",
+		frame = "IFRXPLegacyObjectiveTracker",
+		mixin = "IFRXPLegacyObjectiveTrackerMixin",
+		idOffset = 900000,
+		menuTag = "MENU_RXP_LEGACY_TRACKER",
+		packs = {
+			"RXPGuides", "RXPGuides_Legacy", "RXP_Legacy",
+			"RestedXP_Legacy", "RXPLegacyGuides",
+		},
+	},
 }
 
-local levelSettings = {
-	headerText = "RestedXP Guide",
-	events = { "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA" },
-	blockTemplate = "IFObjectiveTrackerAnimBlockTemplate",
-	lineTemplate = "IFObjectiveTrackerAnimLineTemplate",
-	hasDisplayPriority = true,
-}
+local baseEvents = { "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA" }
 
-local profSettings = {
-	headerText = "RestedXP Profession",
-	events = { "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "SKILL_LINES_CHANGED", "TRADE_SKILL_SHOW" },
-	blockTemplate = "IFObjectiveTrackerAnimBlockTemplate",
-	lineTemplate = "IFObjectiveTrackerAnimLineTemplate",
-	hasDisplayPriority = true,
-}
+local function MakeSettings(kind)
+	local meta = KIND_META[kind]
+	local events = {}
+	for _, e in ipairs(baseEvents) do
+		events[#events + 1] = e
+	end
+	for _, e in ipairs(meta.events or {}) do
+		events[#events + 1] = e
+	end
+	return {
+		headerText = meta.header,
+		events = events,
+		blockTemplate = "IFObjectiveTrackerAnimBlockTemplate",
+		lineTemplate = "IFObjectiveTrackerAnimLineTemplate",
+		hasDisplayPriority = true,
+	}
+end
 
-IFRXPGuideObjectiveTrackerMixin = CreateFromMixins(IFObjectiveTrackerModuleMixin, levelSettings)
-IFRXPProfessionObjectiveTrackerMixin = CreateFromMixins(IFObjectiveTrackerModuleMixin, profSettings)
+IFRXPGuideObjectiveTrackerMixin = CreateFromMixins(IFObjectiveTrackerModuleMixin, MakeSettings("leveling"))
+IFRXPProfessionObjectiveTrackerMixin = CreateFromMixins(IFObjectiveTrackerModuleMixin, MakeSettings("profession"))
+IFRXPDungeonObjectiveTrackerMixin = CreateFromMixins(IFObjectiveTrackerModuleMixin, MakeSettings("dungeon"))
+IFRXPLegacyObjectiveTrackerMixin = CreateFromMixins(IFObjectiveTrackerModuleMixin, MakeSettings("legacy"))
 
 local reportedMissing
-local reportedApi
-local reportedProfApi
-local lastLevelSignature
-local lastProfSignature
+local reportedApi = {}
+local lastSignature = {}
 local lastWaypointKey
 local ticker
-local detectedPacksCache
-local detectedPacksAt
+local detectedCache
+local detectedAt
 
 local function ChatError(moduleName, cause, hint)
 	local msg = ("|cffff6666Improved Forever Quest Tracker [%s]:|r %s"):format(moduleName, cause)
@@ -86,7 +129,6 @@ function IQT.RXPHasApi()
 	return type(frame) == "table" and type(frame.activeSteps) == "table"
 end
 
--- Private RXP addon table (Ace); exposed as _G.RXP for debug in upstream.
 local function GetRXPAddon()
 	if type(_G.RXP) == "table" and (type(_G.RXP.guides) == "table" or _G.RXP.currentGuide) then
 		return _G.RXP
@@ -98,12 +140,18 @@ local function GetRXPAddon()
 	return nil
 end
 
-local function GuideEnabled()
-	return IQT.Settings().rxpGuide ~= false
+local function KindEnabled(kind)
+	local key = KIND_META[kind].setting
+	return IQT.Settings()[key] ~= false
 end
 
-local function ProfessionEnabled()
-	return IQT.Settings().rxpProfession ~= false
+local function AnyKindEnabled()
+	for _, kind in ipairs(KINDS) do
+		if KindEnabled(kind) then
+			return true
+		end
+	end
+	return false
 end
 
 local function StripNewlines(text)
@@ -121,142 +169,143 @@ local function ElementLineText(element)
 	if not element or element.hideTooltip then
 		return nil
 	end
-	local text = element.tooltipText or element.rawtext or element.text
-	return StripNewlines(text)
+	return StripNewlines(element.tooltipText or element.rawtext or element.text)
 end
 
 local function StepTitle(step, index)
 	if type(step.title) == "string" and step.title ~= "" then
 		return step.title
 	end
-	local idx = tonumber(step.index) or index
-	return ("Step %d"):format(idx or index)
+	return ("Step %d"):format(tonumber(step.index) or index or 1)
 end
 
 local function StepIsShown(step)
-	if type(step) ~= "table" then
-		return false
-	end
-	if step.hidewindow or step.hidetip or step.inactive then
-		return false
-	end
-	return true
+	return type(step) == "table" and not step.hidewindow and not step.hidetip and not step.inactive
 end
 
-local function GuideIsProfession(guide)
+-- Classify a guide into leveling | profession | dungeon | legacy.
+local function ClassifyGuide(guide)
 	if type(guide) ~= "table" then
-		return false
+		return "leveling"
 	end
-	local kind = guide.guideKind or guide.kind
-	if type(kind) == "string" and kind:lower() == "profession" then
-		return true
+	local kindTag = tostring(guide.guideKind or guide.kind or ""):lower()
+	if kindTag == "profession" or kindTag == "dungeon" or kindTag == "legacy" then
+		return kindTag
 	end
-	local group = guide.group or guide.groupdisplayname or ""
-	if type(group) == "string" and group:lower():find("profession", 1, true) then
-		return true
+	local blob = table.concat({
+		tostring(guide.group or ""),
+		tostring(guide.groupdisplayname or ""),
+		tostring(guide.subgroup or ""),
+		tostring(guide.name or ""),
+		tostring(guide.displayname or ""),
+	}, " "):lower()
+	-- Order matters: dungeon/legacy/profession before generic leveling.
+	if blob:find("profession", 1, true) then
+		return "profession"
 	end
-	return false
+	if blob:find("dungeon", 1, true) then
+		return "dungeon"
+	end
+	if blob:find("legacy", 1, true) then
+		return "legacy"
+	end
+	return "leveling"
 end
 
-local function StepIsProfession(step)
+local function ClassifyStep(step)
 	if type(step) ~= "table" then
-		return false
+		return "leveling"
 	end
 	if step.profession or step.professionskip then
-		return true
+		return "profession"
 	end
-	return GuideIsProfession(step.guide)
+	if step.dungeon or step.enabledungeon or step.dungeonskip then
+		return "dungeon"
+	end
+	return ClassifyGuide(step.guide)
 end
 
-function IQT.RXPDetectProfessionPacks(force)
+function IQT.RXPDetectPacks(force)
 	local now = GetTime and GetTime() or 0
-	if not force and detectedPacksCache and detectedPacksAt and (now - detectedPacksAt) < 5 then
-		return detectedPacksCache
+	if not force and detectedCache and detectedAt and (now - detectedAt) < 5 then
+		return detectedCache
 	end
-	local found = {}
-	for _, name in ipairs(PROFESSION_PACK_ADDONS) do
-		if IsAddOnLoaded(name) then
-			found[#found + 1] = name
+	local byKind = {}
+	local allAddons = {}
+	local seenAddon = {}
+	for _, kind in ipairs(KINDS) do
+		local loaded = {}
+		for _, name in ipairs(KIND_META[kind].packs) do
+			if IsAddOnLoaded(name) then
+				loaded[#loaded + 1] = name
+				if not seenAddon[name] then
+					seenAddon[name] = true
+					allAddons[#allAddons + 1] = name
+				end
+			end
 		end
+		byKind[kind] = { addons = loaded, registered = 0 }
 	end
-	-- Guides registered in RXP with #guideKind profession (bundled or /rxp import).
 	local rxp = GetRXPAddon()
-	local registered = 0
 	if rxp and type(rxp.guides) == "table" then
 		for _, guide in pairs(rxp.guides) do
-			if GuideIsProfession(guide) then
-				registered = registered + 1
+			local k = ClassifyGuide(guide)
+			if byKind[k] then
+				byKind[k].registered = byKind[k].registered + 1
 			end
 		end
 	end
-	detectedPacksCache = {
-		addons = found,
-		registeredProfessionGuides = registered,
+	detectedCache = {
+		byKind = byKind,
+		addons = allAddons,
 		rxpAddonTable = rxp ~= nil,
 		hasGuideProgressApi = rxp ~= nil and type(rxp.GetGuideProgress) == "function",
 	}
-	detectedPacksAt = now
-	return detectedPacksCache
+	detectedAt = now
+	return detectedCache
+end
+
+-- Back-compat alias used by earlier profession work / slash help.
+function IQT.RXPDetectProfessionPacks(force)
+	local d = IQT.RXPDetectPacks(force)
+	return {
+		addons = d.byKind.profession.addons,
+		registeredProfessionGuides = d.byKind.profession.registered,
+		rxpAddonTable = d.rxpAddonTable,
+		hasGuideProgressApi = d.hasGuideProgressApi,
+	}
 end
 
 local function MaybeReportMissing()
-	if reportedMissing or not (GuideEnabled() or ProfessionEnabled()) then
+	if reportedMissing or not AnyKindEnabled() then
 		return
 	end
 	if IQT.RXPAvailable() then
 		return
 	end
 	reportedMissing = true
-	ChatError(
-		MODULE,
-		"RXPGuides is not loaded",
-		"Enable RXPGuides in the AddOns list, or disable with /if quests rxp off"
-	)
+	ChatError("RXPGuide", "RXPGuides is not loaded", "Enable RXPGuides, or /if quests rxp off")
 end
 
-local function MaybeReportApi()
-	if reportedApi or not GuideEnabled() or not IQT.RXPAvailable() then
+local function MaybeReportApi(kind)
+	if reportedApi[kind] or not KindEnabled(kind) or not IQT.RXPAvailable() then
 		return
 	end
 	if IQT.RXPHasApi() then
 		return
 	end
-	reportedApi = true
-	ChatError(
-		MODULE,
-		"RXPGuides is loaded but RXPFrame.activeSteps is missing",
-		"Update RestedXP Guides, or disable with /if quests rxp off"
-	)
+	reportedApi[kind] = true
+	ChatError(KIND_META[kind].module, "RXPFrame.activeSteps is missing", "Update RestedXP Guides, or disable this RXP tracker section")
 end
 
-local function MaybeReportProfApi()
-	if reportedProfApi or not ProfessionEnabled() or not IQT.RXPAvailable() then
-		return
-	end
-	local det = IQT.RXPDetectProfessionPacks()
-	if det.rxpAddonTable and det.hasGuideProgressApi then
-		return
-	end
-	-- Profession glance needs the private addon table; activeSteps still works for a loaded profession guide.
-	if IQT.RXPHasApi() then
-		return
-	end
-	reportedProfApi = true
-	ChatError(
-		MODULE_PROF,
-		"Profession glance API missing (RXP.guides / GetGuideProgress)",
-		"Load a profession guide in RXP, or update RestedXP; /if quests rxp profession off to hide"
-	)
-end
-
-local function CollectActiveStepsFiltered(wantProfession)
+local function CollectActiveStepsOfKind(wantKind)
 	local frame = _G.RXPFrame
 	if type(frame) ~= "table" or type(frame.activeSteps) ~= "table" then
 		return nil, "api"
 	end
 	local out = {}
-	for i, step in ipairs(frame.activeSteps) do
-		if StepIsShown(step) and StepIsProfession(step) == wantProfession then
+	for _, step in ipairs(frame.activeSteps) do
+		if StepIsShown(step) and ClassifyStep(step) == wantKind then
 			out[#out + 1] = step
 			if #out >= MAX_STEPS then
 				break
@@ -266,37 +315,27 @@ local function CollectActiveStepsFiltered(wantProfession)
 	return out
 end
 
--- When leveling is the current guide, also surface the current step of any
--- profession guide that has saved progress (RXPCData.guideProgress).
-local function CollectProfessionGlanceSteps(excludeKeys)
+local function CollectGlanceSteps(wantKind, excludeKeys)
 	excludeKeys = excludeKeys or {}
 	local rxp = GetRXPAddon()
-	if not rxp or type(rxp.guides) ~= "table" then
-		MaybeReportProfApi()
+	if not rxp or type(rxp.guides) ~= "table" or type(rxp.GetGuideProgress) ~= "function" then
 		return {}
 	end
-	if type(rxp.GetGuideProgress) ~= "function" then
-		MaybeReportProfApi()
-		return {}
-	end
-
 	local progressDB = type(RXPCData) == "table" and type(RXPCData.guideProgress) == "table" and RXPCData.guideProgress
 	local out = {}
 	local seen = 0
-
 	for _, guide in pairs(rxp.guides) do
-		if seen >= MAX_PROF_GUIDES then
+		if seen >= MAX_GLANCE_GUIDES then
 			break
 		end
-		if GuideIsProfession(guide) and guide.key and not excludeKeys[guide.key] and not guide.empty and not guide.disabled then
+		if ClassifyGuide(guide) == wantKind and guide.key and not excludeKeys[guide.key]
+			and not guide.empty and not guide.disabled then
 			local hasProgress = progressDB and progressDB[guide.key]
 			local isCurrent = rxp.currentGuide == guide
 			if hasProgress or isCurrent then
-				local stepIndex = rxp.GetGuideProgress(guide)
-				stepIndex = tonumber(stepIndex) or 1
+				local stepIndex = tonumber(rxp.GetGuideProgress(guide)) or 1
 				local step = guide.steps and guide.steps[stepIndex]
 				if type(step) == "table" and StepIsShown(step) then
-					-- Attach guide ref if missing so titles/headers work.
 					if not step.guide then
 						step.guide = guide
 					end
@@ -309,29 +348,30 @@ local function CollectProfessionGlanceSteps(excludeKeys)
 	return out
 end
 
-local function CollectProfessionSteps()
-	local fromActive, err = CollectActiveStepsFiltered(true)
+local function CollectStepsForKind(kind)
+	local fromActive, err = CollectActiveStepsOfKind(kind)
 	if err == "api" then
 		return nil, "api"
 	end
 	fromActive = fromActive or {}
 
-	local exclude = {}
-	for _, step in ipairs(fromActive) do
-		local g = step.guide
-		if g and g.key then
-			exclude[g.key] = true
-		end
-	end
-
-	-- If the loaded guide is already a profession guide, activeSteps cover it.
-	local rxp = GetRXPAddon()
-	if rxp and GuideIsProfession(rxp.currentGuide) then
+	-- Leveling: active steps only (no glance of other leveling guides).
+	if kind == "leveling" then
 		return fromActive
 	end
 
-	local glance = CollectProfessionGlanceSteps(exclude)
-	for _, step in ipairs(glance) do
+	local rxp = GetRXPAddon()
+	if rxp and ClassifyGuide(rxp.currentGuide) == kind then
+		return fromActive
+	end
+
+	local exclude = {}
+	for _, step in ipairs(fromActive) do
+		if step.guide and step.guide.key then
+			exclude[step.guide.key] = true
+		end
+	end
+	for _, step in ipairs(CollectGlanceSteps(kind, exclude)) do
 		if #fromActive >= MAX_STEPS then
 			break
 		end
@@ -340,37 +380,33 @@ local function CollectProfessionSteps()
 	return fromActive
 end
 
-local function CollectLevelingSteps()
-	return CollectActiveStepsFiltered(false)
-end
-
 local function StepSignature(steps, prefix)
 	if not steps then
 		return (prefix or "") .. "none"
 	end
 	local parts = { prefix or "" }
 	for i, step in ipairs(steps) do
-		local idx = tostring(step.index or step.stepId or i)
-		local title = tostring(step.title or "")
-		local gkey = step.guide and tostring(step.guide.key or step.guide.name or "") or ""
 		local n = 0
 		for _, el in ipairs(step.elements or {}) do
 			if ElementLineText(el) then
 				n = n + 1
 			end
 		end
-		parts[#parts + 1] = idx .. ":" .. title .. ":" .. gkey .. ":" .. n
+		parts[#parts + 1] = table.concat({
+			tostring(step.index or step.stepId or i),
+			tostring(step.title or ""),
+			step.guide and tostring(step.guide.key or step.guide.name or "") or "",
+			tostring(n),
+		}, ":")
 	end
 	return table.concat(parts, "|")
 end
 
 local function SyncBlizzardWaypoint()
-	local db = IQT.Settings()
-	if not db.rxpWaypoint then
+	if not IQT.Settings().rxpWaypoint then
 		return
 	end
-	local arrow = _G.RXPG_ARROW
-	local el = arrow and arrow.element
+	local el = _G.RXPG_ARROW and _G.RXPG_ARROW.element
 	if type(el) ~= "table" then
 		return
 	end
@@ -390,20 +426,16 @@ local function SyncBlizzardWaypoint()
 	if not (C_Map.SetUserWaypoint and UiMapPoint and UiMapPoint.CreateFromCoordinates) then
 		return
 	end
-	local ok, err = pcall(function()
+	pcall(function()
 		C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(zone, nx, ny))
 		if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
 			C_SuperTrack.SetSuperTrackedUserWaypoint(true)
 		end
 	end)
-	if not ok then
-		ChatError(MODULE, "Failed to set Blizzard user waypoint", tostring(err))
-	end
 end
 
 local function SyncQuestFocus(steps)
-	local db = IQT.Settings()
-	if not db.rxpQuestFocus then
+	if not IQT.Settings().rxpQuestFocus then
 		return
 	end
 	if not (C_SuperTrack and C_SuperTrack.SetSuperTrackedQuestID and C_QuestLog and C_QuestLog.GetLogIndexForQuestID) then
@@ -422,15 +454,17 @@ local function SyncQuestFocus(steps)
 	end
 end
 
+local function FrameForKind(kind)
+	return _G[KIND_META[kind].frame]
+end
+
 local function AddStepToModule(self, step, index, idOffset)
-	idOffset = idOffset or 0
 	local blockID = step.stepId or step.index or index
 	if type(blockID) ~= "number" then
 		blockID = 100000 + index + idOffset
 	else
 		blockID = blockID + (step.sticky and 500000 or 0) + idOffset
 	end
-
 	local block = self:GetBlock(blockID)
 	local title = StepTitle(step, index)
 	block.name = title
@@ -438,16 +472,15 @@ local function AddStepToModule(self, step, index, idOffset)
 
 	local added = 0
 	local guideName
-	if type(step.guide) == "table" and type(step.guide.name) == "string" then
+	if type(step.guide) == "table" then
 		guideName = step.guide.displayname or step.guide.name
-	elseif type(RXPCData) == "table" and type(RXPCData.currentGuideName) == "string" then
+	elseif type(RXPCData) == "table" then
 		guideName = RXPCData.currentGuideName
 	end
 	if guideName and guideName ~= "" and index == 1 then
 		block:AddObjective("guide", guideName, nil, nil, IF_OBJECTIVE_DASH_STYLE_HIDE, IF_OBJECTIVE_TRACKER_COLOR["Normal"])
 		added = added + 1
 	end
-
 	for j, element in ipairs(step.elements or {}) do
 		if added >= MAX_OBJECTIVES then
 			break
@@ -467,12 +500,9 @@ local function AddStepToModule(self, step, index, idOffset)
 			added = added + 1
 		end
 	end
-
 	if added == 0 then
-		local fallback = StripNewlines(step.text) or "Follow the RestedXP step"
-		block:AddObjective(1, fallback, nil, nil, IF_OBJECTIVE_DASH_STYLE_SHOW, IF_OBJECTIVE_TRACKER_COLOR["Normal"])
+		block:AddObjective(1, StripNewlines(step.text) or "Follow the RestedXP step", nil, nil, IF_OBJECTIVE_DASH_STYLE_SHOW, IF_OBJECTIVE_TRACKER_COLOR["Normal"])
 	end
-
 	return self:LayoutBlock(block)
 end
 
@@ -485,182 +515,111 @@ local function EnsureTicker()
 			MaybeReportMissing()
 			return
 		end
-
-		local levelDirty, profDirty = false, false
-
-		if GuideEnabled() and IQT.RXPHasApi() then
-			local steps = CollectLevelingSteps()
-			local sig = StepSignature(steps, "L")
-			if sig ~= lastLevelSignature then
-				lastLevelSignature = sig
-				levelDirty = true
-				-- Waypoint/focus follow the live arrow / active leveling steps.
-				SyncBlizzardWaypoint()
-				SyncQuestFocus(steps)
+		for _, kind in ipairs(KINDS) do
+			if KindEnabled(kind) then
+				local steps = CollectStepsForKind(kind)
+				local sig = StepSignature(steps, kind)
+				if sig ~= lastSignature[kind] then
+					lastSignature[kind] = sig
+					if kind == "leveling" then
+						SyncBlizzardWaypoint()
+						SyncQuestFocus(steps)
+					end
+					local frame = FrameForKind(kind)
+					if frame then
+						frame:MarkDirty()
+					end
+				end
 			end
-		end
-
-		if ProfessionEnabled() then
-			local steps = CollectProfessionSteps()
-			local sig = StepSignature(steps, "P")
-			if sig ~= lastProfSignature then
-				lastProfSignature = sig
-				profDirty = true
-			end
-		end
-
-		if levelDirty and IFRXPGuideObjectiveTracker then
-			IFRXPGuideObjectiveTracker:MarkDirty()
-		end
-		if profDirty and IFRXPProfessionObjectiveTracker then
-			IFRXPProfessionObjectiveTracker:MarkDirty()
 		end
 	end)
 end
 
----------------------------------------------------------------------------
--- Leveling module
----------------------------------------------------------------------------
-
-function IFRXPGuideObjectiveTrackerMixin:InitModule()
-	MaybeReportMissing()
-	MaybeReportApi()
-	IQT.RXPDetectProfessionPacks(true)
-	EnsureTicker()
-end
-
-function IFRXPGuideObjectiveTrackerMixin:OnEvent(event, ...)
-	self:MarkDirty()
-end
-
-function IFRXPGuideObjectiveTrackerMixin:OnBlockHeaderClick(block, mouseButton)
-	if mouseButton == "RightButton" then
-		IFObjectiveTrackerMenu.CreateContextMenu(self:GetContextMenuParent(), function(owner, rootDescription)
-			rootDescription:SetTag("MENU_RXP_GUIDE_TRACKER")
-			rootDescription:CreateTitle(block.name or "RestedXP")
-			rootDescription:CreateButton("Open RestedXP window", function()
-				if _G.RXPFrame and _G.RXPFrame.Show then
-					_G.RXPFrame:Show()
-				else
-					ChatError(MODULE, "Could not open RXP window", "Use RXPGuides' own slash command")
-				end
-			end)
-			rootDescription:CreateButton("Hide RestedXP leveling in tracker", function()
-				IQT.SetRXPGuide(false)
-			end)
-		end)
-	elseif _G.RXPFrame and _G.RXPFrame.Show then
-		_G.RXPFrame:Show()
-	end
-end
-
-function IFRXPGuideObjectiveTrackerMixin:LayoutContents()
-	if not GuideEnabled() then
-		return
-	end
-	if not IQT.RXPAvailable() then
+local function BindKindMixin(mixin, kind)
+	local meta = KIND_META[kind]
+	function mixin:InitModule()
 		MaybeReportMissing()
-		return
+		MaybeReportApi(kind)
+		IQT.RXPDetectPacks(true)
+		EnsureTicker()
 	end
-	if not IQT.RXPHasApi() then
-		MaybeReportApi()
-		return
+	function mixin:OnEvent()
+		self:MarkDirty()
 	end
-
-	local steps = CollectLevelingSteps()
-	if not steps or #steps == 0 then
-		return
+	function mixin:OnBlockHeaderClick(block, mouseButton)
+		if mouseButton == "RightButton" then
+			IFObjectiveTrackerMenu.CreateContextMenu(self:GetContextMenuParent(), function(owner, rootDescription)
+				rootDescription:SetTag(meta.menuTag)
+				rootDescription:CreateTitle(block.name or meta.header)
+				rootDescription:CreateButton("Open RestedXP window", function()
+					if _G.RXPFrame and _G.RXPFrame.Show then
+						_G.RXPFrame:Show()
+					else
+						ChatError(meta.module, "Could not open RXP window", "Use RXPGuides' slash command")
+					end
+				end)
+				rootDescription:CreateButton("Hide " .. meta.header .. " in tracker", function()
+					IQT.SetRXPKind(kind, false)
+				end)
+			end)
+		elseif _G.RXPFrame and _G.RXPFrame.Show then
+			_G.RXPFrame:Show()
+		end
 	end
-
-	for i, step in ipairs(steps) do
-		if not AddStepToModule(self, step, i, 0) then
+	function mixin:LayoutContents()
+		if not KindEnabled(kind) then
 			return
+		end
+		if not IQT.RXPAvailable() then
+			MaybeReportMissing()
+			return
+		end
+		local steps, err = CollectStepsForKind(kind)
+		if err == "api" then
+			MaybeReportApi(kind)
+			return
+		end
+		if not steps or #steps == 0 then
+			return
+		end
+		for i, step in ipairs(steps) do
+			if not AddStepToModule(self, step, i, meta.idOffset) then
+				return
+			end
 		end
 	end
 end
 
----------------------------------------------------------------------------
--- Profession module
----------------------------------------------------------------------------
+BindKindMixin(IFRXPGuideObjectiveTrackerMixin, "leveling")
+BindKindMixin(IFRXPProfessionObjectiveTrackerMixin, "profession")
+BindKindMixin(IFRXPDungeonObjectiveTrackerMixin, "dungeon")
+BindKindMixin(IFRXPLegacyObjectiveTrackerMixin, "legacy")
 
-function IFRXPProfessionObjectiveTrackerMixin:InitModule()
-	MaybeReportMissing()
-	MaybeReportProfApi()
-	IQT.RXPDetectProfessionPacks(true)
-	EnsureTicker()
-end
-
-function IFRXPProfessionObjectiveTrackerMixin:OnEvent(event, ...)
-	self:MarkDirty()
-end
-
-function IFRXPProfessionObjectiveTrackerMixin:OnBlockHeaderClick(block, mouseButton)
-	if mouseButton == "RightButton" then
-		IFObjectiveTrackerMenu.CreateContextMenu(self:GetContextMenuParent(), function(owner, rootDescription)
-			rootDescription:SetTag("MENU_RXP_PROFESSION_TRACKER")
-			rootDescription:CreateTitle(block.name or "RestedXP Profession")
-			rootDescription:CreateButton("Open RestedXP window", function()
-				if _G.RXPFrame and _G.RXPFrame.Show then
-					_G.RXPFrame:Show()
-				else
-					ChatError(MODULE_PROF, "Could not open RXP window", "Use RXPGuides' own slash command")
-				end
-			end)
-			rootDescription:CreateButton("Hide RestedXP profession in tracker", function()
-				IQT.SetRXPProfession(false)
-			end)
-		end)
-	elseif _G.RXPFrame and _G.RXPFrame.Show then
-		_G.RXPFrame:Show()
-	end
-end
-
-function IFRXPProfessionObjectiveTrackerMixin:LayoutContents()
-	if not ProfessionEnabled() then
+function IQT.SetRXPKind(kind, on)
+	local meta = KIND_META[kind]
+	if not meta then
 		return
 	end
-	if not IQT.RXPAvailable() then
-		MaybeReportMissing()
-		return
+	IQT.Settings()[meta.setting] = not not on
+	IQT.Refresh()
+	local frame = FrameForKind(kind)
+	if frame then
+		frame:MarkDirty()
 	end
-
-	local steps, err = CollectProfessionSteps()
-	if err == "api" then
-		MaybeReportApi()
-		return
-	end
-	if not steps or #steps == 0 then
-		return
-	end
-
-	for i, step in ipairs(steps) do
-		-- Offset ids so profession blocks never collide with leveling blocks.
-		if not AddStepToModule(self, step, i, 700000) then
-			return
-		end
-	end
+	IQT.Print(meta.header .. " in tracker: " .. (on and "on" or "off"))
 end
-
----------------------------------------------------------------------------
--- Settings / slash helpers
----------------------------------------------------------------------------
 
 function IQT.SetRXPGuide(on)
-	IQT.Settings().rxpGuide = not not on
-	IQT.Refresh()
-	if IFRXPGuideObjectiveTracker then
-		IFRXPGuideObjectiveTracker:MarkDirty()
-	end
-	IQT.Print("RestedXP leveling in tracker: " .. (on and "on" or "off"))
+	IQT.SetRXPKind("leveling", on)
 end
-
 function IQT.SetRXPProfession(on)
-	IQT.Settings().rxpProfession = not not on
-	IQT.Refresh()
-	if IFRXPProfessionObjectiveTracker then
-		IFRXPProfessionObjectiveTracker:MarkDirty()
-	end
-	IQT.Print("RestedXP profession in tracker: " .. (on and "on" or "off"))
+	IQT.SetRXPKind("profession", on)
+end
+function IQT.SetRXPDungeon(on)
+	IQT.SetRXPKind("dungeon", on)
+end
+function IQT.SetRXPLegacy(on)
+	IQT.SetRXPKind("legacy", on)
 end
 
 function IQT.SetRXPWaypoint(on)
@@ -675,34 +634,31 @@ function IQT.SetRXPQuestFocus(on)
 end
 
 function IQT.RXPDebug()
-	local det = IQT.RXPDetectProfessionPacks(true)
+	local det = IQT.RXPDetectPacks(true)
 	IQT.Print("RXP available: " .. tostring(IQT.RXPAvailable())
 		.. ", activeSteps API: " .. tostring(IQT.RXPHasApi())
-		.. ", leveling: " .. tostring(GuideEnabled())
-		.. ", profession: " .. tostring(ProfessionEnabled()))
-	IQT.Print("Profession packs loaded: "
-		.. (#det.addons > 0 and table.concat(det.addons, ", ") or "(none of the known folder names)")
-		.. ("; registered profession guides: " .. tostring(det.registeredProfessionGuides))
-		.. ("; RXP addon table: " .. tostring(det.rxpAddonTable))
-		.. ("; GetGuideProgress: " .. tostring(det.hasGuideProgressApi)))
-
-	local level = CollectLevelingSteps()
-	IQT.Print(("Leveling active steps: %d"):format(level and #level or 0))
-	if level then
-		for i, step in ipairs(level) do
-			IQT.Print(("  L%d. %s"):format(i, StepTitle(step, i)))
+		.. ", RXP table: " .. tostring(det.rxpAddonTable)
+		.. ", GetGuideProgress: " .. tostring(det.hasGuideProgressApi))
+	IQT.Print("Packs loaded: " .. (#det.addons > 0 and table.concat(det.addons, ", ") or "(none of the known folder names)"))
+	for _, kind in ipairs(KINDS) do
+		local meta = KIND_META[kind]
+		local info = det.byKind[kind]
+		local steps = CollectStepsForKind(kind)
+		IQT.Print(("%s [%s]: enabled=%s registered=%d steps=%d packs=%s"):format(
+			meta.header,
+			kind,
+			tostring(KindEnabled(kind)),
+			info.registered,
+			steps and #steps or 0,
+			#info.addons > 0 and table.concat(info.addons, ",") or "-"
+		))
+		if steps then
+			for i, step in ipairs(steps) do
+				local g = step.guide and (step.guide.displayname or step.guide.name) or "?"
+				IQT.Print(("  %d. [%s] %s"):format(i, tostring(g), StepTitle(step, i)))
+			end
 		end
 	end
-
-	local prof = CollectProfessionSteps()
-	IQT.Print(("Profession steps: %d"):format(prof and #prof or 0))
-	if prof then
-		for i, step in ipairs(prof) do
-			local g = step.guide and (step.guide.displayname or step.guide.name) or "?"
-			IQT.Print(("  P%d. [%s] %s"):format(i, tostring(g), StepTitle(step, i)))
-		end
-	end
-
 	local el = _G.RXPG_ARROW and _G.RXPG_ARROW.element
 	if el then
 		IQT.Print(("Arrow: map %s @ %.1f, %.1f"):format(tostring(el.zone), tonumber(el.x) or 0, tonumber(el.y) or 0))

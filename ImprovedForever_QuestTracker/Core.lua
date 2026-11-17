@@ -6,9 +6,8 @@
 --   a sound when a tracked quest's objective completes (ObjectiveSound.lua)
 --   menus as the game's (Dropdown.lua, Tracker/Menu.lua)
 --   the controller (Tracker/Pad.lua), quest items (Tracker/Items.lua)
---   RestedXP leveling + profession steps (Tracker/RXPGuideObjectiveTracker.lua):
---     soft-dep on RXPGuides (+ optional profession packs); active / glance steps
---     as tracker blocks above Blizzard quest watches
+--   RestedXP leveling / profession / dungeon / legacy
+--     (Tracker/RXPGuideObjectiveTracker.lua): soft-dep on RXPGuides (+ packs)
 -- set up in its tab (QuestTrackerEditor.lua). Its files share this addon's
 -- own table (IQT), left to the other modules as IF.QuestTracker.
 local addonName, IQT = ...
@@ -133,10 +132,12 @@ local DEFAULTS = {
 	objectiveSound = true,
 	focusFirst = true,
 	-- RestedXP modules (Tracker/RXPGuideObjectiveTracker.lua)
-	rxpGuide = true,       -- show active RXP leveling steps above Blizzard quest watches
-	rxpProfession = true,  -- show RXP profession-guide steps (active or saved progress glance)
-	rxpWaypoint = true,    -- mirror RXPG_ARROW into Blizzard user waypoint (gamepad nav)
-	rxpQuestFocus = false, -- when true, SuperTrack matching questId if in the log
+	rxpGuide = true,       -- leveling / speedrun steps
+	rxpProfession = true,  -- profession-guide steps (active or progress glance)
+	rxpDungeon = true,     -- dungeon-guide steps (Forever Dungeon Guide group, etc.)
+	rxpLegacy = true,      -- legacy-guide steps (when RXP ships / imports them)
+	rxpWaypoint = true,    -- mirror RXPG_ARROW into Blizzard user waypoint
+	rxpQuestFocus = false, -- SuperTrack matching questId if in the log
 }
 
 -- Per character, in Improved Forever's own (IF.charDB.questTracker)
