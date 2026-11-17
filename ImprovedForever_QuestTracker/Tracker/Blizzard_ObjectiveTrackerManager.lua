@@ -194,12 +194,13 @@ function IFObjectiveTrackerManager:Init()
 	self:AddContainer(mainTrackerFrame);
 
 	if self.canAddModules then
-		-- RestedXP guide module sits above Blizzard quest watches when present
-		-- (empty LayoutContents hides it). Stock quest watches stay intact.
+		-- RestedXP leveling + profession modules sit above Blizzard quest
+		-- watches when present (empty LayoutContents hides them).
 		local orderedModules = {
 			IFScenarioObjectiveTracker,
 			IFUIWidgetObjectiveTracker,
 			IFRXPGuideObjectiveTracker,
+			IFRXPProfessionObjectiveTracker,
 			IFCampaignQuestObjectiveTracker,	
 			IFQuestObjectiveTracker,
 			IFAdventureObjectiveTracker,

@@ -1,5 +1,6 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\..\..\..\..\WoW\Data\Interface\AddOns\Blizzard_SharedXML\UI.xsd">
-	<!-- RestedXP guide steps as an ImprovedForever objective-tracker module. -->
+	<!-- RestedXP leveling + profession guide steps as ImprovedForever objective-tracker modules. -->
 	<Frame name="IFRXPGuideObjectiveTracker" mixin="IFRXPGuideObjectiveTrackerMixin" inherits="IFObjectiveTrackerModuleTemplate"/>
+	<Frame name="IFRXPProfessionObjectiveTracker" mixin="IFRXPProfessionObjectiveTrackerMixin" inherits="IFObjectiveTrackerModuleTemplate"/>
 </Ui>

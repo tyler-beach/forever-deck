@@ -117,19 +117,21 @@ of that half.
 
 ## RestedXP guide steps (Quest Tracker)
 
-This tyler-beach fork feeds **RestedXP Forever** active steps into `ImprovedForever_QuestTracker`
-as a first-class objective-tracker module (`Tracker/RXPGuideObjectiveTracker.*`).
+This tyler-beach fork feeds **RestedXP** leveling and profession steps into `ImprovedForever_QuestTracker`
+as first-class objective-tracker modules (`Tracker/RXPGuideObjectiveTracker.*`).
 
 | Behavior | Detail |
 |---|---|
-| Soft dependency | `## OptionalDeps: RXPGuides` — addon loads cleanly if RestedXP is missing |
-| Placement | RXP blocks render **above** Blizzard quest watches (primary when a guide is active); stock watches are unchanged |
-| Data source | `RXPFrame.activeSteps` + optional `RXPG_ARROW.element` (same internals other bridges use) |
-| Waypoint sync | Optional Blizzard user waypoint from the RXP arrow (gamepad-friendly Forever nav) |
-| Quest focus | Optional SuperTrack when a step exposes `questId` already in the log (off by default) |
-| Gamepad | Blizzard quest rows keep the existing pad-focus mirror; RXP blocks are visual / mouse (no synthetic quest cache writes) |
+| Soft dependency | `OptionalDeps: RXPGuides` + known profession pack folder names — loads cleanly if missing |
+| Placement | **RestedXP Guide** (leveling) and **RestedXP Profession** render **above** Blizzard quest watches; stock watches unchanged |
+| Leveling source | Non-profession entries in `RXPFrame.activeSteps` |
+| Profession source | Profession-classified active steps, or a glance at saved progress (`RXP.GetGuideProgress`) for `#guideKind profession` guides while leveling |
+| Packages detected | `RXPGuides` (bundled Classic Herbalism/Mining/Skinning; Forever via import/shop), plus optional `RXPGuides_Professions`, `RXP_Professions`, `RestedXP_Professions`, `RXPProfessionGuides`, … — listed by `/if quests rxp debug` |
+| Waypoint sync | Optional Blizzard user waypoint from `RXPG_ARROW` (gamepad-friendly Forever nav) |
+| Quest focus | Optional SuperTrack when a step exposes `questId` in the log (off by default) |
+| Gamepad | Blizzard quest rows keep pad-focus mirror; RXP blocks are visual / mouse |
 
-Slash: `/if quests rxp [on\|off]`, `/if quests rxp waypoint [on\|off]`, `/if quests rxp focus [on\|off]`, `/if quests rxp debug`.
+Slash: `/if quests rxp [on\|off]`, `/if quests rxp profession [on\|off]`, `/if quests rxp waypoint|focus|debug`.
 
 ## Development
 

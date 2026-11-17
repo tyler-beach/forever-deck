@@ -58,10 +58,15 @@ local ITEMS = {
     }, OnOff(function() return IQT.Settings().objectiveSound end,
         function(on) IQT.SetObjectiveSound(on) end, "Objective sound")),
     Item({
-        key = "rxpGuide", group = "rxp", label = "RestedXP guide steps",
-        tip = "When RXPGuides is loaded, show its active guide steps as tracker blocks above Blizzard quest watches. Soft dependency: safe if RestedXP is missing.",
+        key = "rxpGuide", group = "rxp", label = "RestedXP leveling steps",
+        tip = "When RXPGuides is loaded, show active leveling steps as tracker blocks above Blizzard quest watches. Soft dependency: safe if RestedXP is missing.",
     }, OnOff(function() return IQT.Settings().rxpGuide end,
-        function(on) IQT.SetRXPGuide(on) end, "RestedXP guide steps")),
+        function(on) IQT.SetRXPGuide(on) end, "RestedXP leveling steps")),
+    Item({
+        key = "rxpProfession", group = "rxp", label = "RestedXP profession steps",
+        tip = "Show profession-guide steps (#guideKind profession / Profession Leveling group): from the active RXP window, or a glance at saved progress while leveling. Soft-deps on RXPGuides and optional profession packs.",
+    }, OnOff(function() return IQT.Settings().rxpProfession end,
+        function(on) IQT.SetRXPProfession(on) end, "RestedXP profession steps")),
     Item({
         key = "rxpWaypoint", group = "rxp", label = "Sync Blizzard waypoint",
         tip = "Mirror the RestedXP arrow target into the Blizzard user waypoint so Forever gamepad navigation points at the same place.",

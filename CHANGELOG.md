@@ -1,5 +1,12 @@
 # Changelog
 
+## Quest Tracker 0.6.8 (tyler-beach)
+
+- Profession guides: new **RestedXP Profession** tracker module for `#guideKind profession` / Profession Leveling group steps.
+- While leveling, glances saved profession-guide progress via `RXP.GetGuideProgress` (up to 2 guides); same IF block feel as leveling.
+- Soft-deps + detection for known profession pack folder names; `/if quests rxp debug` lists loaded packs and registered profession guides.
+- `/if quests rxp profession [on|off]` and settings toggle; leveling module unchanged.
+
 ## Quest Tracker 0.6.7 (tyler-beach)
 
 - RestedXP bridge: active `RXPGuides` steps appear as objective-tracker blocks above Blizzard quest watches (`Tracker/RXPGuideObjectiveTracker`).
