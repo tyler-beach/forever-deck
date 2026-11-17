@@ -1,5 +1,9 @@
 # Changelog
 
+## Immersion 0.13.6 (tyler-beach)
+
+- Hotfix: remove a UTF-8 character in `GamepadBar.lua` that could fail Immersion’s load (Blizzard HUD back, Immersion settings missing). Shared Shock CD fix from 0.13.5 kept.
+
 ## Immersion 0.13.5 (tyler-beach)
 
 - Gamepad diamonds: **shared cooldowns** show on every linked spell (e.g. Shaman Earth / Flame / Frost Shock), not only the one you cast — spell-CD read out of combat, shared-group timer in combat when numbers are secret.

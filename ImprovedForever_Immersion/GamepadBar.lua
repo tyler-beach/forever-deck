@@ -650,6 +650,7 @@ end
 -- The slot's cooldown, in seconds (start, duration): spell CD (shared-aware),
 -- else action CD, else the button's cooldown frame (top bar face buttons).
 local function SlotCooldown(native)
+    if not native then return nil end
     -- (a stand-in's (GB.StandIn): its spell's or item's)
     if native.spellID then
         return SpellCooldownByID(native.spellID)
@@ -901,7 +902,7 @@ local SHARED_CD = {
 
 local function BaseSpellName(name)
     if type(name) ~= "string" or Secret(name) then return nil end
-    -- "Flame Shock(Rank 2)" / "Flame Shock (Rank 2)" → "flame shock"
+    -- "Flame Shock(Rank 2)" / "Flame Shock (Rank 2)" -> "flame shock"
     return (name:gsub("%s*%([^)]*%)%s*$", ""):match("^%s*(.-)%s*$") or name):lower()
 end
 
