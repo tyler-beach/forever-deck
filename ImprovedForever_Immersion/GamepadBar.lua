@@ -81,7 +81,13 @@ local function Shape(d)
     return d
 end
 -- (the D-pad's tiles as big as the face buttons': the setting "padSame", read as the file loads)
-local SAME = IF.db and IN.Settings().padSame
+local SAME = false
+do
+    local ok, v = pcall(function()
+        return IF.db and IN.Settings and IN.Settings().padSame
+    end)
+    SAME = ok and v and true or false
+end
 local FACE = Shape({ size = 44, glyph = 22 })
 local DPAD = Shape({ size = SAME and 44 or 36, glyph = SAME and 22 or 18 })
 local CLASS = Shape({ size = 36, glyph = 18 })

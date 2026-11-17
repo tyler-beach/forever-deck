@@ -66,6 +66,36 @@ IF.AddCommand("platecast", function(args) IN.Nameplates.Demo(args[1]) end,
 -- /if padprobe: what the game's gamepad bar holds (GamepadBar.lua)
 IF.AddCommand("padprobe", function() IN.GamepadBar.Probe() end, ": what the gamepad bar's buttons hold")
 
+-- /if pad [on|off|status|diamond|square|circle]: Immersion gamepad diamonds vs Blizzard radial bar
+IF.AddCommand("pad", function(args)
+    local sub = args[1] and args[1]:lower() or "status"
+    local s = IN.Settings()
+    if sub == "on" or sub == "1" or sub == "true" then
+        s.pad = true
+        IN.GamepadBar.Apply()
+        IF.Print("Immersion action bar: on (diamonds). If you still see Blizzard's radial bar, enable ImprovedForever_Immersion at character select.")
+    elseif sub == "off" or sub == "0" or sub == "false" then
+        s.pad = false
+        IN.GamepadBar.Apply()
+        IF.Print("Immersion action bar: off (game's gamepad bar)")
+    elseif sub == "diamond" or sub == "square" or sub == "circle" then
+        s.pad = true
+        s.padStyle = sub
+        IN.GamepadBar.Apply()
+        IF.Print("Immersion action bar: on, style " .. sub)
+    else
+        local main = _G.GamepadMainActionBarFrame
+        local pu = main and main.PageUnit
+        IF.Print(("Immersion pad setting=%s style=%s | GamepadMain=%s PageUnit=%s"):format(
+            tostring(s.pad ~= false),
+            tostring(s.padStyle or "diamond"),
+            tostring(main ~= nil),
+            tostring(pu ~= nil)
+        ))
+        IF.Print("/if pad on|off|diamond|square|circle — /if padprobe for slot dump")
+    end
+end, "[on|off|status|diamond|square|circle]: Immersion spell diamonds vs Blizzard gamepad bar")
+
 -- /if l1probe: what L1 and the face buttons run (PartyPad.lua)
 -- /if tlprobe: what the game keeps secret for the timelines (BuffTimeline.lua)
 IF.AddCommand("tlprobe", function() IN.BuffTimeline.Probe() end, ": log what the buff and cooldown timelines can read in a fight")

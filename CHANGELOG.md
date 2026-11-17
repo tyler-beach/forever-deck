@@ -1,5 +1,10 @@
 # Changelog
 
+## Immersion 0.13.7 (tyler-beach)
+
+- `/if pad [on|off|status|diamond]` to re-enable Immersion spell diamonds if Blizzard’s radial gamepad bar is stuck showing.
+- Safer GamepadBar load (padSame read). If Immersion vanished after 0.13.5, re-enable **ImprovedForever_Immersion** (+ Spoken) at character-select AddOns, update to this build, `/reload`.
+
 ## Immersion 0.13.6 (tyler-beach)
 
 - Hotfix: remove a UTF-8 character in `GamepadBar.lua` that could fail Immersion’s load (Blizzard HUD back, Immersion settings missing). Shared Shock CD fix from 0.13.5 kept.
