@@ -1,5 +1,11 @@
 # Changelog
 
+## Quest Tracker 0.6.10 (tyler-beach)
+
+- Show RXP tip / instruction lines (`*` / `hideTooltip`) in the tracker — train, buy spells, profession notes, etc. (RXP keeps those off the map tooltip; they still belong on-screen).
+- Keep sticky + current + tip-window steps together under the guide’s kind (`.profession` / `.dungeon` step tags are filters, not separate modules).
+- Raise caps to 8 active steps × 12 lines; tip steps titled **Tip** when untitled.
+
 ## Quest Tracker 0.6.9 (tyler-beach)
 
 - Dungeon + Legacy modules: **RestedXP Dungeon** / **RestedXP Legacy** (same IF feel as leveling/profession).

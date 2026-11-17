@@ -7,8 +7,10 @@
 local addonName, IQT = ...
 local IF = ImprovedForever
 
-local MAX_STEPS = 3
-local MAX_OBJECTIVES = 8
+-- Match RXP's sticky + current + tip window; tips/train/"buy spells" are often
+-- separate activeSteps entries or * lines inside a step.
+local MAX_STEPS = 8
+local MAX_OBJECTIVES = 12
 local MAX_GLANCE_GUIDES = 2
 local TICK_SECONDS = 0.5
 
@@ -165,16 +167,26 @@ local function StripNewlines(text)
 	return text
 end
 
+-- RXP's guide window shows element.text even when hideTooltip is set (* tip
+-- lines use hideTooltip so they stay off the map tooltip — still on-screen).
 local function ElementLineText(element)
-	if not element or element.hideTooltip then
+	if not element or element.skip then
 		return nil
 	end
-	return StripNewlines(element.tooltipText or element.rawtext or element.text)
+	local text = element.text
+	if text == " " then
+		-- RXP placeholder while waiting on server IDs; skip until filled.
+		return nil
+	end
+	return StripNewlines(text or element.rawtext or element.tooltipText)
 end
 
 local function StepTitle(step, index)
 	if type(step.title) == "string" and step.title ~= "" then
 		return step.title
+	end
+	if step.tip then
+		return "Tip"
 	end
 	return ("Step %d"):format(tonumber(step.index) or index or 1)
 end
@@ -184,6 +196,8 @@ local function StepIsShown(step)
 end
 
 -- Classify a guide into leveling | profession | dungeon | legacy.
+-- Step tags `.profession` / `.dungeon` are RXP *filters* (show when that
+-- profession/dungeon is enabled), NOT guide-kind — keep them on their guide.
 local function ClassifyGuide(guide)
 	if type(guide) ~= "table" then
 		return "leveling"
@@ -215,12 +229,6 @@ end
 local function ClassifyStep(step)
 	if type(step) ~= "table" then
 		return "leveling"
-	end
-	if step.profession or step.professionskip then
-		return "profession"
-	end
-	if step.dungeon or step.enabledungeon or step.dungeonskip then
-		return "dungeon"
 	end
 	return ClassifyGuide(step.guide)
 end
@@ -487,7 +495,8 @@ local function AddStepToModule(self, step, index, idOffset)
 		end
 		local text = ElementLineText(element)
 		if text then
-			local complete = element.completed or element.textOnly
+			-- textOnly (* tips / train / buy spells) are instructions, not completed.
+			local complete = element.completed and not element.textOnly
 			local dash = complete and IF_OBJECTIVE_DASH_STYLE_HIDE or IF_OBJECTIVE_DASH_STYLE_SHOW
 			local color = IF_OBJECTIVE_TRACKER_COLOR[complete and "Complete" or "Normal"]
 			local line = block:AddObjective(j, text, nil, nil, dash, color)
@@ -655,7 +664,19 @@ function IQT.RXPDebug()
 		if steps then
 			for i, step in ipairs(steps) do
 				local g = step.guide and (step.guide.displayname or step.guide.name) or "?"
-				IQT.Print(("  %d. [%s] %s"):format(i, tostring(g), StepTitle(step, i)))
+				local lines, tips = 0, 0
+				for _, el in ipairs(step.elements or {}) do
+					if ElementLineText(el) then
+						lines = lines + 1
+						if el.textOnly or el.hideTooltip then tips = tips + 1 end
+					end
+				end
+				IQT.Print(("  %d. [%s] %s%s — %d lines (%d tip/textOnly)%s"):format(
+					i, tostring(g), StepTitle(step, i),
+					step.sticky and " sticky" or (step.tip and " tip" or ""),
+					lines, tips,
+					step.hidewindow and " [hidden]" or ""
+				))
 			end
 		end
 	end
