@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-labelledby="title desc">
+  <title id="title">ForeverDeck Phase 1 HUD mock — Steam Deck OLED</title>
+  <desc id="desc">Blizzard-native compact player/target frames, clear center FOV, light bags/micro and quest glance on a 16:10 Steam Deck frame.</desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a3d52"/>
+      <stop offset="55%" stop-color="#4a5c3a"/>
+      <stop offset="100%" stop-color="#2c2418"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c9a35a"/>
+      <stop offset="100%" stop-color="#7a5a28"/>
+    </linearGradient>
+    <linearGradient id="hp" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1f7a2e"/>
+      <stop offset="100%" stop-color="#3ecf55"/>
+    </linearGradient>
+    <linearGradient id="mana" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a4a9a"/>
+      <stop offset="100%" stop-color="#4a8cff"/>
+    </linearGradient>
+    <linearGradient id="thp" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7a1a1a"/>
+      <stop offset="100%" stop-color="#d04040"/>
+    </linearGradient>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Steam Deck OLED chassis -->
+  <rect x="8" y="8" width="1264" height="784" rx="36" fill="#0b0c0e" stroke="#22262c" stroke-width="4"/>
+  <rect x="48" y="40" width="1184" height="680" rx="8" fill="url(#sky)"/>
+
+  <!-- Soft world vignette / clear center FOV marker -->
+  <ellipse cx="640" cy="360" rx="220" ry="150" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-dasharray="6 8"/>
+  <text x="640" y="366" text-anchor="middle" fill="#e8e0c8" fill-opacity="0.35" font-family="Georgia, serif" font-size="14">clear center FOV</text>
+
+  <!-- Distant hills hint -->
+  <path d="M48,520 C220,460 360,500 520,470 C700,430 860,500 1232,455 L1232,720 L48,720 Z" fill="#24301f" opacity="0.55"/>
+
+  <!-- PlayerFrame (TOPLEFT ~24,-24, scale ~0.85) -->
+  <g transform="translate(72,56) scale(0.92)">
+    <rect x="44" y="18" width="188" height="58" rx="4" fill="#1a1510" stroke="url(#gold)" stroke-width="2"/>
+    <circle cx="36" cy="46" r="30" fill="#3a2a1a" stroke="url(#gold)" stroke-width="3"/>
+    <circle cx="36" cy="46" r="22" fill="#6b4e2e"/>
+    <text x="58" y="38" fill="#f0e6c8" font-family="Friz Quadrata, Georgia, serif" font-size="13">Tauren Shaman</text>
+    <rect x="58" y="44" width="160" height="10" rx="1" fill="#111"/>
+    <rect x="58" y="44" width="132" height="10" rx="1" fill="url(#hp)"/>
+    <rect x="58" y="56" width="160" height="8" rx="1" fill="#111"/>
+    <rect x="58" y="56" width="110" height="8" rx="1" fill="url(#mana)"/>
+    <text x="58" y="84" fill="#9aa0a6" font-family="Verdana, sans-serif" font-size="10">PlayerFrame · scaled</text>
+  </g>
+
+  <!-- TargetFrame (TOPRIGHT) -->
+  <g transform="translate(980,56) scale(0.92)">
+    <rect x="0" y="18" width="188" height="58" rx="4" fill="#1a1510" stroke="url(#gold)" stroke-width="2"/>
+    <circle cx="216" cy="46" r="30" fill="#2a1510" stroke="url(#gold)" stroke-width="3"/>
+    <circle cx="216" cy="46" r="22" fill="#5a2a20"/>
+    <text x="12" y="38" fill="#f0e6c8" font-family="Friz Quadrata, Georgia, serif" font-size="13">Hostile Target</text>
+    <rect x="12" y="44" width="160" height="10" rx="1" fill="#111"/>
+    <rect x="12" y="44" width="96" height="10" rx="1" fill="url(#thp)"/>
+    <rect x="12" y="56" width="160" height="8" rx="1" fill="#111"/>
+    <rect x="12" y="56" width="40" height="8" rx="1" fill="#555"/>
+    <text x="12" y="84" fill="#9aa0a6" font-family="Verdana, sans-serif" font-size="10">TargetFrame · scaled</text>
+  </g>
+
+  <!-- Buffs under target -->
+  <g transform="translate(1108,150)">
+    <rect width="22" height="22" rx="2" fill="#2a3a1a" stroke="#8a7a40" stroke-width="1"/>
+    <rect x="26" width="22" height="22" rx="2" fill="#1a2a3a" stroke="#8a7a40" stroke-width="1"/>
+    <rect x="52" width="22" height="22" rx="2" fill="#3a1a2a" stroke="#8a7a40" stroke-width="1"/>
+    <text x="0" y="38" fill="#9aa0a6" font-family="Verdana, sans-serif" font-size="9">BuffFrame</text>
+  </g>
+
+  <!-- Quest glance (RIGHT) -->
+  <g transform="translate(1048,280) scale(0.9)">
+    <rect width="190" height="96" rx="3" fill="#0c0e12" fill-opacity="0.55" stroke="#3a3a28" stroke-width="1"/>
+    <text x="10" y="20" fill="#ffd100" font-family="Friz Quadrata, Georgia, serif" font-size="12">Objectives</text>
+    <text x="10" y="40" fill="#e8e0c8" font-family="Verdana, sans-serif" font-size="11">Call of Fire</text>
+    <text x="14" y="56" fill="#c0c0c0" font-family="Verdana, sans-serif" font-size="10">0/1 Speak with Kanati</text>
+    <text x="10" y="76" fill="#e8e0c8" font-family="Verdana, sans-serif" font-size="11">The Spirits of Stonetalon</text>
+    <text x="10" y="112" fill="#9aa0a6" font-family="Verdana, sans-serif" font-size="9">quest glance · edge</text>
+  </g>
+
+  <!-- Casting bar (below center, FOV clear) -->
+  <g transform="translate(440,520)">
+    <rect width="400" height="18" rx="2" fill="#111" stroke="#6a5a30" stroke-width="1"/>
+    <rect width="240" height="18" rx="2" fill="#3a5a9a"/>
+    <text x="200" y="13" text-anchor="middle" fill="#f0e6c8" font-family="Verdana, sans-serif" font-size="11">Lightning Bolt</text>
+    <text x="200" y="34" text-anchor="middle" fill="#9aa0a6" font-family="Verdana, sans-serif" font-size="9">cast bar nudged off dead-center</text>
+  </g>
+
+  <!-- Essentials strip (BOTTOM center) -->
+  <g transform="translate(500,628)">
+    <rect width="280" height="36" rx="3" fill="#05050a" fill-opacity="0.55"/>
+    <text x="12" y="22" fill="#d8d0b8" font-family="Verdana, sans-serif" font-size="11">Tauren  82% hp  68% res</text>
+    <text x="268" y="22" text-anchor="end" fill="#d8d0b8" font-family="Verdana, sans-serif" font-size="11">60% hp  25% res</text>
+  </g>
+
+  <!-- Bags / micro (BOTTOMRIGHT, slightly larger hit targets) -->
+  <g transform="translate(1020,650) scale(1.05)">
+    <rect x="0" y="0" width="36" height="36" rx="3" fill="#2a2010" stroke="#c9a35a" stroke-width="1.5"/>
+    <rect x="40" y="0" width="36" height="36" rx="3" fill="#2a2010" stroke="#c9a35a" stroke-width="1.5"/>
+    <rect x="80" y="0" width="36" height="36" rx="3" fill="#2a2010" stroke="#c9a35a" stroke-width="1.5"/>
+    <rect x="120" y="0" width="36" height="36" rx="3" fill="#2a2010" stroke="#c9a35a" stroke-width="1.5"/>
+    <rect x="160" y="0" width="40" height="36" rx="3" fill="#1a2810" stroke="#c9a35a" stroke-width="1.5"/>
+    <text x="0" y="52" fill="#9aa0a6" font-family="Verdana, sans-serif" font-size="9">bags / micro · larger targets</text>
+  </g>
+
+  <!-- Caption -->
+  <text x="64" y="748" fill="#8a9098" font-family="Verdana, sans-serif" font-size="12">ForeverDeck Phase 1 · Blizzard-native Steam Deck HUD (not ElvUI)</text>
+  <text x="1216" y="748" text-anchor="end" fill="#5a6068" font-family="Verdana, sans-serif" font-size="11">1280×800 · Interface 16001</text>
+</svg>
