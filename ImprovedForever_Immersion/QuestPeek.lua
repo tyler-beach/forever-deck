@@ -193,7 +193,7 @@ local function Build(id, focused, expanded, budget)
         if #story > room then
             while #story > room do story[#story] = nil end
             while #story > 1 and story[#story].lt == BLANK do story[#story] = nil end
-            story[#story].lt = story[#story].lt:gsub("%s+$", "") .. "…"
+            story[#story].lt = story[#story].lt:gsub("%s+$", "") .. "..."
         end
         if #story > 0 then
             sig[#sig + 1] = "story" .. #story
@@ -248,7 +248,7 @@ local function BuildGroup(quests, budget, open)
                 Wrap(paragraph, story, 0.85, 0.85, 0.85)
             end
             while #story > 8 do story[#story] = nil end
-            if #story == 8 then story[8].lt = story[8].lt:gsub("%s+$", "") .. "…" end
+            if #story == 8 then story[8].lt = story[8].lt:gsub("%s+$", "") .. "..." end
             for i = #story, 1, -1 do table.insert(goal, 1, story[i]) end
             sig[#sig + 1] = "open" .. id
         end

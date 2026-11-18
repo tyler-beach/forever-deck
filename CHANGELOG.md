@@ -1,5 +1,12 @@
 # Changelog
 
+## Immersion 0.13.9 / Core 0.19.2 (tyler-beach)
+
+- **Auto-enable Immersion** on login (one reload) when the folder exists but WoW left it disabled after a load abort - Deck gets spell diamonds without `/if immersion enable`.
+- **Journal is optional** (Immersion never called it; hard dep blocked load when Journal was unchecked).
+- Strip UTF-8 punctuation from Immersion Lua that could abort TOC load before GamepadBar.
+- Re-apply pad diamonds after login; clearer `/if immersion` status.
+
 ## Quest Tracker 0.6.12 (tyler-beach)
 
 - **RestedXP only:** while an RXP guide is active, Blizzard quest + campaign watches are hidden in the IF tracker so only RestedXP steps show (IF chrome). Default on.

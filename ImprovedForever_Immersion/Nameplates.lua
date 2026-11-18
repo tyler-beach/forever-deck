@@ -342,7 +342,7 @@ local function Team(unit)
 end
 
 -- RestedXP current-step targets (soft-dep): bright Immersion gold / warm kill tint,
--- full plate weight, quest icon — so the NPC to talk to reads differently than the crowd.
+-- full plate weight, quest icon - so the NPC to talk to reads differently than the crowd.
 local RXP_FRIEND = { 1, 0.9, 0.4 }
 local RXP_KILL = { 1, 0.55, 0.32 }
 local RXP_ICON_FRIEND = "Interface\\GossipFrame\\ActiveQuestIcon"

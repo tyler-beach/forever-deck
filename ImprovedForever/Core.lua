@@ -63,6 +63,28 @@ if addons and addons.DoesAddOnExist and addons.DoesAddOnExist(OLD_GATHER)
     IF.oldGather = true
 end
 
+-- Immersion spell diamonds: after a mid-load abort WoW leaves Immersion
+-- unchecked at character select, and Deck users stay on Blizzard's radial
+-- bar. Re-enable Immersion (and Journal when present) as soon as Core loads
+-- so the next login / our one-shot reload picks them up without a slash.
+local IMMERSION_ADDON = "ImprovedForever_Immersion"
+local JOURNAL_ADDON = "ImprovedForever_Journal"
+local function EnableAddonFolder(name)
+    if not (addons and addons.DoesAddOnExist and addons.DoesAddOnExist(name) and addons.EnableAddOn) then
+        return false
+    end
+    pcall(addons.EnableAddOn, name)
+    local player = UnitName and UnitName("player")
+    if type(player) == "string" and player ~= "" then
+        pcall(addons.EnableAddOn, player, name)
+    end
+    return true
+end
+if addons then
+    EnableAddonFolder(JOURNAL_ADDON)
+    EnableAddonFolder(IMMERSION_ADDON)
+end
+
 function IF.AddModule(def)
     if def.addon == OLD_CONTROLLER or (IF.oldGather and def.addon == OLD_GATHER) then return def end
     if byKey[def.key] then return byKey[def.key] end
@@ -185,14 +207,40 @@ loader:SetScript("OnEvent", function()
         IF.Print("Improved Forever: Gather is now Improved Forever: Minimap and has been turned off;"
             .. " remove it from your AddOns folder or CurseForge.")
     end
-    -- Deck: Immersion often stays off after a load abort, or never loads when Spoken
-    -- was a hard dep and wasn't installed. Tip once so the radial Blizzard bar makes sense.
+    -- Auto-recover Immersion so Deck gets spell diamonds without /if immersion enable.
     do
         local A = _G.C_AddOns
-        local name = "ImprovedForever_Immersion"
+        local name = IMMERSION_ADDON
         if A and A.DoesAddOnExist and A.DoesAddOnExist(name)
             and A.IsAddOnLoaded and not A.IsAddOnLoaded(name) then
-            IF.Print("Immersion is not loaded (Blizzard gamepad bar stays). /if immersion")
+            EnableAddonFolder(JOURNAL_ADDON)
+            EnableAddonFolder(name)
+            local loaded = false
+            if A.LoadAddOn then
+                pcall(A.LoadAddOn, name)
+                loaded = A.IsAddOnLoaded(name)
+            elseif _G.LoadAddOn then
+                pcall(_G.LoadAddOn, name)
+                loaded = A.IsAddOnLoaded(name)
+            end
+            if loaded then
+                IF.Print("Immersion loaded - spell diamonds should appear.")
+            else
+                -- One reload per core version after EnableAddOn (disabled addons
+                -- cannot LoadAddOn mid-session). Stops reload loops.
+                local stamp = "0.19.2"
+                if IF.db.immersionAutoFix ~= stamp then
+                    IF.db.immersionAutoFix = stamp
+                    IF.Print("Immersion was disabled; enabling spell diamonds and reloading once...")
+                    if C_Timer and C_Timer.After and ReloadUI then
+                        C_Timer.After(0.4, ReloadUI)
+                    elseif ReloadUI then
+                        ReloadUI()
+                    end
+                else
+                    IF.Print("Immersion still not loaded after auto-enable. Character select > AddOns > ImprovedForever_Immersion. /if immersion")
+                end
+            end
         end
     end
 end)
@@ -233,34 +281,31 @@ end
 IF.AddCommand("immersion", function(args)
     local sub = args[1] and args[1]:lower() or "status"
     local A = _G.C_AddOns
-    local name = "ImprovedForever_Immersion"
+    local name = IMMERSION_ADDON
     if sub == "enable" or sub == "on" or sub == "fix" then
         if not (A and A.DoesAddOnExist and A.DoesAddOnExist(name)) then
             return IF.Print("Immersion folder missing - update forever-deck (All-forever zip).")
         end
-        if A.EnableAddOn then
-            pcall(A.EnableAddOn, name)
-            pcall(A.EnableAddOn, UnitName("player"), name)
-        end
-        -- Soft-dep now, but enable Spoken too when present so VO works.
-        if A.DoesAddOnExist("Spoken") and A.EnableAddOn then
-            pcall(A.EnableAddOn, "Spoken")
-            pcall(A.EnableAddOn, UnitName("player"), "Spoken")
-        end
-        if A.DoesAddOnExist("ImprovedForever_Journal") and A.EnableAddOn then
-            pcall(A.EnableAddOn, "ImprovedForever_Journal")
-            pcall(A.EnableAddOn, UnitName("player"), "ImprovedForever_Journal")
-        end
+        EnableAddonFolder(JOURNAL_ADDON)
+        EnableAddonFolder(name)
+        if A and A.DoesAddOnExist("Spoken") then EnableAddonFolder("Spoken") end
+        IF.db.immersionAutoFix = nil
         IF.Print("Immersion enabled. Reloading...")
         if ReloadUI then ReloadUI() end
         return
     end
     IF.Print("Immersion: " .. AddonState(name))
-    IF.Print("Journal: " .. AddonState("ImprovedForever_Journal"))
+    IF.Print("Journal (optional): " .. AddonState(JOURNAL_ADDON))
     IF.Print("Spoken (optional): " .. AddonState("Spoken"))
     if IF.Interface and IF.Interface.GamepadBar then
-        IF.Print("GamepadBar loaded. /if pad status - /if pad diamond")
+        local main = _G.GamepadMainActionBarFrame
+        local holder = _G.ImprovedForeverGamepadBar
+        IF.Print(("GamepadBar loaded | GamepadMain visible=%s | diamondsShown=%s"):format(
+            tostring(main and main:IsVisible() or false),
+            tostring(holder and holder:IsShown() or false)
+        ))
+        IF.Print("/if pad diamond to force diamonds")
     else
-        IF.Print("Diamonds need Immersion loaded. /if immersion enable")
+        IF.Print("Diamonds need Immersion loaded. Update forever-deck; Core auto-enables Immersion on login.")
     end
 end, "[status|enable]: Immersion load state; enable + /reload for spell diamonds")

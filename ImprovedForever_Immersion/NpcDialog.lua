@@ -1,6 +1,6 @@
 -- Talking to an NPC as a subtitle, as Spoken (spoken.rusty.one) draws its
 -- lines: low in the middle of the screen on a soft dark band, the NPC's
--- round face, its name in gold, " • " and the quest's title in grey, its
+-- round face, its name in gold, " * " and the quest's title in grey, its
 -- words in white under them, Spoken's progress line under those (the
 -- game's widget status bar and the casting bar's spark), its round
 -- controls; then, in the same look, the rewards (round), the quests or
@@ -167,10 +167,10 @@ faceRing:SetPoint("TOPLEFT", -3, 3)
 faceRing:SetPoint("BOTTOMRIGHT", 3, -3)
 faceRing:SetAtlas(RING)
 
--- Its name, " • ", the quest's title or Spoken's state, in one row
+-- Its name, " * ", the quest's title or Spoken's state, in one row
 local name = Shadowed(panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge"), GOLD)
 local dot = Shadowed(panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge"), GREY)
-dot:SetText("•")
+dot:SetText("*")
 local title = Shadowed(panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge"), GREY)
 title:SetWordWrap(false)
 local status = Shadowed(panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge"), GREY)
@@ -1246,7 +1246,7 @@ local function Build(d)
 
     Band()
 
-    -- (the face, the name, " • " and the quest's title, centred as one)
+    -- (the face, the name, " * " and the quest's title, centred as one)
     if UnitExists(unit) then
         SetPortraitTexture(portrait, unit)
     else

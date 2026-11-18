@@ -259,3 +259,23 @@ function IN.Settings()
     db.breathLog, db.waterLog = nil, nil
     return settings
 end
+
+-- Spell diamonds: force apply after login (and clear Core's auto-enable stamp
+-- so a future load abort can recover again). Default pad stays on.
+IF.OnLogin(function()
+    if IF.db then IF.db.immersionAutoFix = nil end
+    local s = IN.Settings()
+    if s.pad == nil then s.pad = true end
+    if s.padStyle == nil or s.padStyle == "" then s.padStyle = "diamond" end
+    if not s.pad then return end
+    local function ApplyPad()
+        if IN.GamepadBar and IN.GamepadBar.Apply then
+            IN.GamepadBar.Apply()
+        end
+    end
+    ApplyPad()
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0.5, ApplyPad)
+        C_Timer.After(2, ApplyPad)
+    end
+end)

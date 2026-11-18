@@ -1893,17 +1893,20 @@ local function Watch()
     GB.SetStyle(IN.Settings().padStyle)
     local pu = PageUnit()
     local main = GamepadMainActionBarFrame
-    local wanted = IN.Settings().pad and not UF.EditMode()
-    local gamepadUI = pu ~= nil and main ~= nil and main:IsVisible()
-    local on = wanted and gamepadUI
+    local wanted = IN.Settings().pad ~= false and not UF.EditMode()
+    -- Prefer PageUnit when present; if Forever shows GamepadMain without a
+    -- PageUnit for a tick, still treat it as gamepad UI so we keep fading the
+    -- radial chrome instead of flashing Blizzard's bar over our diamonds.
+    local mainVisible = main ~= nil and main:IsVisible()
+    local gamepadUI = mainVisible and (pu ~= nil or wanted)
+    local on = wanted and mainVisible and pu ~= nil
     -- (the keyboard and mouse bar: the game's main bar, shown instead of
     -- the pad's while the Gamepad UI is off)
     local keyBar = _G.MainActionBar
-    local keys = wanted and not gamepadUI and keyBar ~= nil and keyBar:IsVisible()
-    -- Also fade the whole GamepadMain chrome (Forever layout changes can leave
-    -- radial pieces outside NativeParts). Cover stays on the bars only so our
-    -- diamonds keep the mouse.
-    if main then IF.Focus.Fade(main, on) end
+    local keys = wanted and not mainVisible and keyBar ~= nil and keyBar:IsVisible()
+    -- Fade whole GamepadMain whenever we want diamonds and it is up (covers
+    -- Forever layout pieces NativeParts can miss). Cover stays on bars only.
+    if main then IF.Focus.Fade(main, wanted and mainVisible) end
     if pu then
         for _, part in ipairs(NativeParts(pu)) do IF.Focus.Fade(part, on) end
         for _, bar in ipairs(NativeBars(pu)) do UF.Cover(bar, on) end

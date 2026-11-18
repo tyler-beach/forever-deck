@@ -172,7 +172,7 @@ local ITEMS = {
         key = "nameplateRXP", group = "top", section = "Nameplates", label = "Highlight RestedXP targets",
         tip = "When RXPGuides is loaded, the current guide step's NPCs and mobs stand out on our nameplates: "
             .. "bright Immersion gold (talk-to) or warm orange (kill), full size, with a quest icon. Soft "
-            .. "dependency — does nothing without RestedXP. Needs nameplates on; friendly NPC plates help "
+            .. "dependency - does nothing without RestedXP. Needs nameplates on; friendly NPC plates help "
             .. "for quest givers.",
     }, Toggle("nameplateRXP", "Highlight RestedXP targets", function() IN.Nameplates.Apply() end)),
     Item({

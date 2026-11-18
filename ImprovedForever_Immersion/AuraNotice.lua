@@ -5,7 +5,7 @@
 -- every aura read from addon code, so a gain then is not announced (and not told afterwards:
 -- the first look out of combat takes what is on you as it is). Setting auraNotice.
 -- Description-only updates (Plainsrunning's % rising as you run) refresh a card already on
--- screen quietly — they do NOT re-toast. Racial run buffs are never announced.
+-- screen quietly - they do NOT re-toast. Racial run buffs are never announced.
 local IF = ImprovedForever
 local IN = IF.Interface
 
@@ -18,7 +18,7 @@ local DESC_WIDTH, DESC_LINES = 44, 5      -- (the words (the stats) in lines thi
 local UP, DOWN = { 0.35, 0.9, 0.35 }, { 0.95, 0.3, 0.25 }
 local MAX_QUEUE = 6
 
--- Forever Tauren Plainsrunning (and similar): updates every tick while moving — never toast.
+-- Forever Tauren Plainsrunning (and similar): updates every tick while moving - never toast.
 local IGNORE_SPELL_ID = {
 	[1299038] = true, -- Plainsrunning
 }
@@ -171,7 +171,7 @@ end
 
 -- known: instance id -> { apps, sig }. Announce on gain and on stack increase only.
 -- Description-only changes (Plainsrunning % while running) update the visible card in place
--- when it is already that aura — never re-queue a toast.
+-- when it is already that aura - never re-queue a toast.
 local function Look(updateInfo)
     if not (IF.db and IN.Settings().auraNotice ~= false) or IF.InCombat() then
         known = nil     -- (the next look out of combat only takes what is on you)

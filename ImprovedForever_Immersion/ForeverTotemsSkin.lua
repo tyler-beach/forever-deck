@@ -2,7 +2,7 @@
 -- bverger/ForeverTotems): reinforce Immersion gold / diamond chrome when
 -- foreverTotemsSkin is on. The vendored 1.1.0 bar already matches; this still
 -- helps a stock CurseForge build. No-ops when ForeverTotems is missing.
--- Setting foreverTotemsSkin (Immersion → Bottom → Totems).
+-- Setting foreverTotemsSkin (Immersion -> Bottom -> Totems).
 local IF = ImprovedForever
 local IN = IF.Interface
 local HS = IN.HeaderSlot
