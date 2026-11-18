@@ -1,5 +1,10 @@
 # Changelog
 
+## Quest Tracker 0.6.13 / Immersion 0.13.10 (tyler-beach)
+
+- **Deck RXP-only actually works with Immersion:** Immersion QuestPeek was covering the IF tracker with Blizzard watch cards (e.g. “Rites of the Earthmother”) and alpha-hiding `IFObjectiveTrackerFrame`, so `rxpOnly` looked broken. QuestPeek now stands down while RXP owns the tracker.
+- **Stock RXP window:** force-hide `RXPFrame` + Active Targets every tick (and OnShow hook); no longer only on the first `hideGuideWindow` flip. v4.x windows that ignored the profile flag stay hidden.
+
 ## Immersion 0.13.9 / Core 0.19.2 (tyler-beach)
 
 - **Auto-enable Immersion** on login (one reload) when the folder exists but WoW left it disabled after a load abort - Deck gets spell diamonds without `/if immersion enable`.

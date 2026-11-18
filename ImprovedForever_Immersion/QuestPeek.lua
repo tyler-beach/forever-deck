@@ -24,8 +24,17 @@ for i = 1, MAX_CARDS do
 end
 local card = cards[1]
 IN.QuestPeek = { card = card, cards = cards }
+
+-- While RestedXP owns the IF tracker (QuestTracker rxpOnly), stand down so
+-- IF RestedXP sections stay visible instead of Blizzard watch cards.
+local function RxpOwnsTracker()
+    local IQT = IF.QuestTracker
+    return IQT and IQT.ShouldHideBlizzardQuests and IQT.ShouldHideBlizzardQuests() or false
+end
+
 -- (the old tracker's pad mirror (QuestTracker's Pad.lua) stands down while this one is the tracker)
 function IN.QuestPeek.Replaces()
+    if RxpOwnsTracker() then return false end
     return IF.db ~= nil and IN.Settings().questPeek ~= false
 end
 
@@ -633,7 +642,8 @@ end
 local ticker = CreateFrame("Frame")
 ticker:SetScript("OnUpdate", function(_, elapsed)
     if IF.db and IF.db.peekLog then IF.db.peekLog = nil end     -- (the probe's log, cleared once)
-    local on = IF.db and IN.Settings().questPeek ~= false
+    -- RXP-only mode: do not cover IFObjectiveTrackerFrame with Blizzard quest cards
+    local on = IF.db and IN.Settings().questPeek ~= false and not RxpOwnsTracker()
     if on then WatchSwipe() else expanded = nil end
     HideOld(on and true or false)
     local id = C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID and C_SuperTrack.GetSuperTrackedQuestID()

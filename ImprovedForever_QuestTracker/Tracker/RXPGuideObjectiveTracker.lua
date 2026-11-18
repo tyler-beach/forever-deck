@@ -279,38 +279,94 @@ local function ClassifyStep(step)
 	return ClassifyGuide(StepGuide(step))
 end
 
--- Hide RXP's own guide window when IF is showing the steps (Deck OLED).
--- Uses RXP's hideGuideWindow profile flag — same as their Settings → Hide Window.
+-- Hide RXP's own guide chrome when IF is showing the steps (Deck OLED).
+-- Sets RXP hideGuideWindow and force-hides RXPFrame + Active Targets every
+-- tick (v4 can keep showing the window even when the profile flag is already true).
+local rxpShowHooked = false
+local function HideOne(frame)
+	if type(frame) ~= "table" or not frame.Hide then
+		return
+	end
+	if frame.IsShown and frame:IsShown() then
+		frame:Hide()
+	elseif not frame.IsShown then
+		pcall(frame.Hide, frame)
+	end
+end
+
+local function HideRXPChrome()
+	local main = _G.RXPFrame
+	HideOne(main)
+	if type(main) == "table" and main.GetChildren then
+		pcall(function()
+			local kids = { main:GetChildren() }
+			for i = 1, #kids do
+				HideOne(kids[i])
+			end
+		end)
+	end
+	for _, name in ipairs({
+		"RXPTargetFrame", "RXP_TargetFrame", "RXPActiveTargetsFrame",
+		"RXPActiveTargetFrame", "RXPG_TargetFrame", "RXPFrameCurrentStepFrame",
+	}) do
+		HideOne(_G[name])
+	end
+	local rxp = GetRXPAddon()
+	local targeting = rxp and rxp.targeting
+	if type(targeting) == "table" then
+		for _, key in ipairs({ "frame", "Frame", "activeTargets", "ActiveTargets", "window" }) do
+			HideOne(targeting[key])
+		end
+	end
+	if type(rxp) == "table" then
+		for _, key in ipairs({ "frame", "Frame", "guideWindow", "GuideWindow", "currentStepFrame" }) do
+			HideOne(rxp[key])
+		end
+	end
+end
+
+local function HookRXPShow()
+	if rxpShowHooked then
+		return
+	end
+	local main = _G.RXPFrame
+	if not (main and main.HookScript) then
+		return
+	end
+	rxpShowHooked = true
+	main:HookScript("OnShow", function(self)
+		if IQT.Settings().rxpHideWindow ~= false and AnyKindEnabled() then
+			self:Hide()
+		end
+	end)
+end
+
 local function ApplyHideRXPWindow()
-	local wantHide = IQT.Settings().rxpHideWindow ~= false and KindEnabled("leveling")
+	local wantHide = IQT.Settings().rxpHideWindow ~= false and AnyKindEnabled()
 	local rxp = GetRXPAddon()
 	local profile = rxp and rxp.settings and rxp.settings.profile
-	if type(profile) == "table" then
-		if wantHide and not profile.hideGuideWindow then
+	if wantHide then
+		if type(profile) == "table" then
 			profile.hideGuideWindow = true
-			if _G.RXPFrame and _G.RXPFrame.SetShown then
-				_G.RXPFrame:SetShown(false)
-			end
 			if rxp.v2 and rxp.v2.events and rxp.v2.events.Trigger then
 				pcall(function()
 					rxp.v2.events:Trigger("GuideWindowRefresh", "visibility", false)
 				end)
 			end
-		elseif not wantHide and profile.hideGuideWindow and IQT.Settings().rxpHideWindow == false then
-			-- Only re-show if the user turned our toggle off (don't fight a prior RXP hide).
-			profile.hideGuideWindow = false
-			if _G.RXPFrame and _G.RXPFrame.SetShown then
-				_G.RXPFrame:SetShown(true)
-			end
-			if rxp.v2 and rxp.v2.events and rxp.v2.events.Trigger then
-				pcall(function()
-					rxp.v2.events:Trigger("GuideWindowRefresh", "visibility", true)
-				end)
-			end
 		end
-	elseif wantHide and _G.RXPFrame and _G.RXPFrame.Hide then
-		-- No AceDB profile reachable — soft-hide the classic frame only.
-		_G.RXPFrame:Hide()
+		HookRXPShow()
+		HideRXPChrome()
+	elseif IQT.Settings().rxpHideWindow == false and type(profile) == "table" and profile.hideGuideWindow then
+		-- Only re-show if the user turned our toggle off (don't fight a prior RXP hide).
+		profile.hideGuideWindow = false
+		if _G.RXPFrame and _G.RXPFrame.SetShown then
+			_G.RXPFrame:SetShown(true)
+		end
+		if rxp.v2 and rxp.v2.events and rxp.v2.events.Trigger then
+			pcall(function()
+				rxp.v2.events:Trigger("GuideWindowRefresh", "visibility", true)
+			end)
+		end
 	end
 end
 
@@ -820,6 +876,10 @@ function IQT.RXPDebug()
 	IQT.Print("RXP only / hide Blizzard watches: " .. tostring(IQT.Settings().rxpOnly ~= false)
 		.. ", driving=" .. tostring(IQT.RXPDriving())
 		.. ", hidingBlizzard=" .. tostring(IQT.ShouldHideBlizzardQuests()))
+	local peek = IF.Interface and IF.Interface.QuestPeek
+	IQT.Print("Immersion QuestPeek replaces IF tracker: "
+		.. tostring(peek and peek.Replaces and peek.Replaces() or false)
+		.. " (should be false while RXP-only)")
 	IQT.Print("Packs loaded: " .. (#det.addons > 0 and table.concat(det.addons, ", ") or "(none of the known folder names)"))
 	for _, kind in ipairs(KINDS) do
 		local meta = KIND_META[kind]
