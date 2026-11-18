@@ -1,5 +1,11 @@
 # Changelog
 
+## Quest Tracker 0.6.12 (tyler-beach)
+
+- **RestedXP only:** while an RXP guide is active, Blizzard quest + campaign watches are hidden in the IF tracker so only RestedXP steps show (IF chrome). Default on.
+- Setting: Quest Tracker → RestedXP → **RestedXP only**; `/if quests rxp only [on|off]`.
+- Stock RXP guide window remains hidden via **Hide RestedXP window** (unchanged).
+
 ## Immersion 0.13.8 / Core 0.19.1 (tyler-beach)
 
 - **Spoken is optional** — Immersion no longer hard-depends on Spoken (not shipped in the forever zip). Missing Spoken used to block Immersion entirely → stuck on Blizzard’s radial gamepad bar.

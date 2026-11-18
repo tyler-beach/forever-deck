@@ -38,6 +38,7 @@ local function PrintStatus()
 	IQT.Print("/if quests debug - list tracked quests and whether the tracker shows them")
 	IQT.Print("/if quests debug rows - toggle each quest's place and distance on its header")
 	IQT.Print("/if quests rxp [on|off] - show RestedXP leveling steps in IF tracker")
+	IQT.Print("/if quests rxp only [on|off] - hide Blizzard quest watches while RXP drives (default on)")
 	IQT.Print("/if quests rxp hide [on|off] - hide RXP's own guide window")
 	IQT.Print("/if quests rxp profession|dungeon|legacy [on|off] - guide-kind sections")
 	IQT.Print("/if quests rxp waypoint|focus [on|off] - waypoint / SuperTrack helpers")
@@ -82,10 +83,17 @@ ImprovedForever.AddCommand("quests", function(args)
 			IQT.SetRXPQuestFocus(ParseOnOff(arg2, db.rxpQuestFocus))
 		elseif arg == "hide" or arg == "window" then
 			IQT.SetRXPHideWindow(ParseOnOff(arg2, db.rxpHideWindow ~= false))
+		elseif arg == "only" or arg == "blizzard" then
+			-- only on = hide Blizzard; blizzard on = show Blizzard (invert)
+			if arg == "blizzard" then
+				IQT.SetRXPOnly(not ParseOnOff(arg2, db.rxpOnly == false))
+			else
+				IQT.SetRXPOnly(ParseOnOff(arg2, db.rxpOnly ~= false))
+			end
 		elseif arg == "on" or arg == "off" or arg == nil or arg == "" then
 			IQT.SetRXPGuide(ParseOnOff(arg, db.rxpGuide))
 		else
-			IQT.Print("usage: /if quests rxp [on|off|hide|profession|dungeon|legacy|waypoint|focus|debug]")
+			IQT.Print("usage: /if quests rxp [on|off|only|hide|profession|dungeon|legacy|waypoint|focus|debug]")
 		end
 	elseif cmd == "menu" then
 		ImprovedForever_ToggleQuestSort()

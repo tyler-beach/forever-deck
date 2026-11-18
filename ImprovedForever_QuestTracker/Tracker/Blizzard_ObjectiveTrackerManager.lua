@@ -194,8 +194,8 @@ function IFObjectiveTrackerManager:Init()
 	self:AddContainer(mainTrackerFrame);
 
 	if self.canAddModules then
-		-- RestedXP leveling / profession / dungeon / legacy modules sit above
-		-- Blizzard quest watches when present (empty LayoutContents hides them).
+		-- RestedXP modules first; with rxpOnly (default) Blizzard quest/campaign
+		-- LayoutContents no-ops while RXP is driving so the tracker is RXP-only.
 		local orderedModules = {
 			IFScenarioObjectiveTracker,
 			IFUIWidgetObjectiveTracker,

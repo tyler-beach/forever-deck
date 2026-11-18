@@ -139,6 +139,7 @@ local DEFAULTS = {
 	rxpWaypoint = true,    -- mirror RXPG_ARROW into Blizzard user waypoint
 	rxpQuestFocus = false, -- SuperTrack matching questId if in the log
 	rxpHideWindow = true,  -- hide RXP's own guide window; IF tracker shows the steps
+	rxpOnly = true,        -- while RXP drives, hide Blizzard quest/campaign watches in IF tracker
 }
 
 -- Per character, in Improved Forever's own (IF.charDB.questTracker)

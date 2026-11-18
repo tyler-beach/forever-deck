@@ -1,8 +1,10 @@
--- RestedXP → ImprovedForever Quest Tracker bridge.
+-- RestedXP -> ImprovedForever Quest Tracker bridge.
 -- Soft-depends on RXPGuides (+ optional profession/dungeon/legacy packs).
--- Four IF modules: Leveling, Profession, Dungeon, Legacy — native tracker
--- blocks above Blizzard quest watches. Taint-safe (no IFQuestCache writes).
--- Guide text is display-only; never persisted to SavedVariables.
+-- Four IF modules: Leveling, Profession, Dungeon, Legacy - native tracker
+-- chrome (not stock RXP UI). With rxpOnly (default on), Blizzard quest /
+-- campaign watches are suppressed while RXP is driving so the IF tracker
+-- shows RestedXP steps only. Stock RXP window stays hidden via rxpHideWindow.
+-- Taint-safe (no IFQuestCache writes). Guide text is display-only.
 
 local addonName, IQT = ...
 local IF = ImprovedForever
@@ -157,6 +159,38 @@ local function AnyKindEnabled()
 		end
 	end
 	return false
+end
+
+-- RXP is "driving" when a guide is current or activeSteps has content and
+-- at least one IF RXP section is enabled.
+function IQT.RXPDriving()
+	if not IQT.RXPAvailable() or not AnyKindEnabled() then
+		return false
+	end
+	local frame = _G.RXPFrame
+	if type(frame) == "table" and type(frame.activeSteps) == "table" and #frame.activeSteps > 0 then
+		return true
+	end
+	local rxp = GetRXPAddon()
+	return rxp ~= nil and rxp.currentGuide ~= nil
+end
+
+-- Default on: while RXP drives, hide Blizzard quest + campaign modules in
+-- the IF tracker (RXP steps keep IF chrome). Off = previous side-by-side.
+function IQT.ShouldHideBlizzardQuests()
+	if IQT.Settings().rxpOnly == false then
+		return false
+	end
+	return IQT.RXPDriving()
+end
+
+local function DirtyBlizzardQuestModules()
+	if IFQuestObjectiveTracker and IFQuestObjectiveTracker.MarkDirty then
+		IFQuestObjectiveTracker:MarkDirty()
+	end
+	if IFCampaignQuestObjectiveTracker and IFCampaignQuestObjectiveTracker.MarkDirty then
+		IFCampaignQuestObjectiveTracker:MarkDirty()
+	end
 end
 
 local function StripNewlines(text)
@@ -585,6 +619,8 @@ local function AddStepToModule(self, step, index, idOffset)
 	return self:LayoutBlock(block)
 end
 
+local lastHideBlizzard
+
 local function EnsureTicker()
 	if ticker then
 		return
@@ -592,9 +628,18 @@ local function EnsureTicker()
 	ticker = C_Timer.NewTicker(TICK_SECONDS, function()
 		if not IQT.RXPAvailable() then
 			MaybeReportMissing()
+			if lastHideBlizzard then
+				lastHideBlizzard = false
+				DirtyBlizzardQuestModules()
+			end
 			return
 		end
 		ApplyHideRXPWindow()
+		local hide = IQT.ShouldHideBlizzardQuests()
+		if hide ~= lastHideBlizzard then
+			lastHideBlizzard = hide
+			DirtyBlizzardQuestModules()
+		end
 		for _, kind in ipairs(KINDS) do
 			if KindEnabled(kind) then
 				local steps = CollectStepsForKind(kind)
@@ -730,6 +775,37 @@ function IQT.SetRXPHideWindow(on)
 	IQT.Print("Hide RestedXP guide window: " .. (on and "on" or "off"))
 end
 
+function IQT.SetRXPOnly(on)
+	IQT.Settings().rxpOnly = not not on
+	lastHideBlizzard = nil
+	DirtyBlizzardQuestModules()
+	IQT.Refresh()
+	IQT.Print("RestedXP only (hide Blizzard quest watches): " .. (on and "on" or "off"))
+end
+
+-- Suppress Blizzard quest + campaign LayoutContents while RXP owns the IF tracker.
+-- Campaign copied LayoutContents at mixin create time, so wrap both tables.
+do
+	local function WrapLayout(mixin)
+		if type(mixin) ~= "table" or type(mixin.LayoutContents) ~= "function" then
+			return
+		end
+		if mixin._ifRxpOnlyWrapped then
+			return
+		end
+		local orig = mixin.LayoutContents
+		mixin.LayoutContents = function(self)
+			if IQT.ShouldHideBlizzardQuests() then
+				return
+			end
+			return orig(self)
+		end
+		mixin._ifRxpOnlyWrapped = true
+	end
+	WrapLayout(IFQuestObjectiveTrackerMixin)
+	WrapLayout(IFCampaignQuestObjectiveTrackerMixin)
+end
+
 function IQT.RXPDebug()
 	local det = IQT.RXPDetectPacks(true)
 	local frame = _G.RXPFrame
@@ -741,6 +817,9 @@ function IQT.RXPDebug()
 		.. ", GetGuideProgress: " .. tostring(det.hasGuideProgressApi))
 	IQT.Print("Hide RXP window: " .. tostring(IQT.Settings().rxpHideWindow ~= false)
 		.. ", RXPFrame shown: " .. tostring(frame and frame.IsShown and frame:IsShown()))
+	IQT.Print("RXP only / hide Blizzard watches: " .. tostring(IQT.Settings().rxpOnly ~= false)
+		.. ", driving=" .. tostring(IQT.RXPDriving())
+		.. ", hidingBlizzard=" .. tostring(IQT.ShouldHideBlizzardQuests()))
 	IQT.Print("Packs loaded: " .. (#det.addons > 0 and table.concat(det.addons, ", ") or "(none of the known folder names)"))
 	for _, kind in ipairs(KINDS) do
 		local meta = KIND_META[kind]
