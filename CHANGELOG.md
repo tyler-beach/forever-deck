@@ -1,9 +1,13 @@
 # Changelog
 
+## Quest Tracker 0.6.14 / Immersion 0.13.11 (tyler-beach)
+
+- **Empty tracker fix:** v0.6.23 `:Hide()` on `RXPFrame` could clear RXP `activeSteps`, so IF RestedXP modules laid out empty and the whole objective tracker collapsed when Blizzard watches were suppressed. Soft-fade RXP chrome instead (keep `activeSteps`), restore IF tracker alpha, and dirty RXP modules when entering RXP-only.
+
 ## Quest Tracker 0.6.13 / Immersion 0.13.10 (tyler-beach)
 
 - **Deck RXP-only actually works with Immersion:** Immersion QuestPeek was covering the IF tracker with Blizzard watch cards (e.g. “Rites of the Earthmother”) and alpha-hiding `IFObjectiveTrackerFrame`, so `rxpOnly` looked broken. QuestPeek now stands down while RXP owns the tracker.
-- **Stock RXP window:** force-hide `RXPFrame` + Active Targets every tick (and OnShow hook); no longer only on the first `hideGuideWindow` flip. v4.x windows that ignored the profile flag stay hidden.
+- **Stock RXP window:** soft-hide path evolved in 0.6.14 (see above).
 
 ## Immersion 0.13.9 / Core 0.19.2 (tyler-beach)
 

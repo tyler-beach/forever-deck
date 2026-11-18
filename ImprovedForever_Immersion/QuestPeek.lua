@@ -532,14 +532,20 @@ local function WatchSwipe()
     end
 end
 
--- The old tracker (QuestTracker's, bottom right) out of sight while ours shows: its frame, ours, at
--- alpha 0 (the game's own tracker runs unseen under it as always)
+-- The old tracker (QuestTracker's) out of sight while ours shows: alpha 0.
+-- When RXP owns the tracker we must restore alpha so RestedXP IF modules show.
 local oldHidden = false
 local function HideOld(hide)
     local old = _G.IFObjectiveTrackerFrame
-    if not old or hide == oldHidden then return end
+    if not old then return end
+    if hide == oldHidden and (not hide or old:GetAlpha() == 0) and (hide or old:GetAlpha() == 1) then
+        return
+    end
     oldHidden = hide
     old:SetAlpha(hide and 0 or 1)
+    if not hide and old.Show then
+        old:Show()
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -639,13 +645,31 @@ local function PlaceHits(c, content)
     end
 end
 
+local wasRxpOwning = false
 local ticker = CreateFrame("Frame")
 ticker:SetScript("OnUpdate", function(_, elapsed)
     if IF.db and IF.db.peekLog then IF.db.peekLog = nil end     -- (the probe's log, cleared once)
-    -- RXP-only mode: do not cover IFObjectiveTrackerFrame with Blizzard quest cards
-    local on = IF.db and IN.Settings().questPeek ~= false and not RxpOwnsTracker()
+    -- RXP-only: stand down Blizzard cards but keep IFObjectiveTrackerFrame visible
+    -- so RestedXP Guide modules can show (never leave the quest UI blank).
+    local rxpOwning = RxpOwnsTracker()
+    local on = IF.db and IN.Settings().questPeek ~= false and not rxpOwning
     if on then WatchSwipe() else expanded = nil end
     HideOld(on and true or false)
+    if rxpOwning and not wasRxpOwning then
+        HideOld(false)
+        local IQT = IF.QuestTracker
+        if IQT and IQT.EnsureRXPTrackerVisible then
+            IQT.EnsureRXPTrackerVisible()
+        end
+    end
+    if rxpOwning then
+        local old = _G.IFObjectiveTrackerFrame
+        if old then
+            if old.GetAlpha and old:GetAlpha() < 1 then old:SetAlpha(1) end
+            if old.Show and old.IsShown and not old:IsShown() then old:Show() end
+        end
+    end
+    wasRxpOwning = rxpOwning
     local id = C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID and C_SuperTrack.GetSuperTrackedQuestID()
     local focus = id ~= 0 and id or nil
     WatchPad(on and true or false)

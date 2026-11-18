@@ -279,66 +279,56 @@ local function ClassifyStep(step)
 	return ClassifyGuide(StepGuide(step))
 end
 
--- Hide RXP's own guide chrome when IF is showing the steps (Deck OLED).
--- Sets RXP hideGuideWindow and force-hides RXPFrame + Active Targets every
--- tick (v4 can keep showing the window even when the profile flag is already true).
-local rxpShowHooked = false
-local function HideOne(frame)
-	if type(frame) ~= "table" or not frame.Hide then
+-- Soft-hide RXP guide chrome when IF shows the steps (Deck OLED).
+-- IMPORTANT: do NOT :Hide() RXPFrame - RXP's OnHide can clear activeSteps,
+-- which empties IF RestedXP modules and collapses the whole tracker.
+-- Use Focus.Fade (alpha) + RXP's hideGuideWindow profile flag instead.
+local rxpFaded = {}
+local function SoftHideFrame(frame, hide)
+	if type(frame) ~= "table" or not frame.GetObjectType then
 		return
 	end
-	if frame.IsShown and frame:IsShown() then
-		frame:Hide()
-	elseif not frame.IsShown then
-		pcall(frame.Hide, frame)
+	if IF.Focus and IF.Focus.Fade then
+		IF.Focus.Fade(frame, hide and true or false)
+	elseif frame.SetAlpha then
+		frame:SetAlpha(hide and 0 or 1)
+	end
+	if hide then
+		rxpFaded[frame] = true
+		if frame.EnableMouse then
+			pcall(frame.EnableMouse, frame, false)
+		end
+	elseif rxpFaded[frame] then
+		rxpFaded[frame] = nil
+		if frame.EnableMouse then
+			pcall(frame.EnableMouse, frame, true)
+		end
 	end
 end
 
-local function HideRXPChrome()
-	local main = _G.RXPFrame
-	HideOne(main)
-	if type(main) == "table" and main.GetChildren then
-		pcall(function()
-			local kids = { main:GetChildren() }
-			for i = 1, #kids do
-				HideOne(kids[i])
-			end
-		end)
-	end
+local function SoftHideRXPChrome(hide)
+	local frames = { _G.RXPFrame }
 	for _, name in ipairs({
 		"RXPTargetFrame", "RXP_TargetFrame", "RXPActiveTargetsFrame",
-		"RXPActiveTargetFrame", "RXPG_TargetFrame", "RXPFrameCurrentStepFrame",
+		"RXPActiveTargetFrame", "RXPG_TargetFrame",
 	}) do
-		HideOne(_G[name])
+		frames[#frames + 1] = _G[name]
 	end
 	local rxp = GetRXPAddon()
 	local targeting = rxp and rxp.targeting
 	if type(targeting) == "table" then
 		for _, key in ipairs({ "frame", "Frame", "activeTargets", "ActiveTargets", "window" }) do
-			HideOne(targeting[key])
+			frames[#frames + 1] = targeting[key]
 		end
 	end
-	if type(rxp) == "table" then
-		for _, key in ipairs({ "frame", "Frame", "guideWindow", "GuideWindow", "currentStepFrame" }) do
-			HideOne(rxp[key])
+	for _, frame in ipairs(frames) do
+		SoftHideFrame(frame, hide)
+	end
+	if not hide then
+		for frame in pairs(rxpFaded) do
+			SoftHideFrame(frame, false)
 		end
 	end
-end
-
-local function HookRXPShow()
-	if rxpShowHooked then
-		return
-	end
-	local main = _G.RXPFrame
-	if not (main and main.HookScript) then
-		return
-	end
-	rxpShowHooked = true
-	main:HookScript("OnShow", function(self)
-		if IQT.Settings().rxpHideWindow ~= false and AnyKindEnabled() then
-			self:Hide()
-		end
-	end)
 end
 
 local function ApplyHideRXPWindow()
@@ -354,19 +344,17 @@ local function ApplyHideRXPWindow()
 				end)
 			end
 		end
-		HookRXPShow()
-		HideRXPChrome()
-	elseif IQT.Settings().rxpHideWindow == false and type(profile) == "table" and profile.hideGuideWindow then
-		-- Only re-show if the user turned our toggle off (don't fight a prior RXP hide).
-		profile.hideGuideWindow = false
-		if _G.RXPFrame and _G.RXPFrame.SetShown then
-			_G.RXPFrame:SetShown(true)
+		SoftHideRXPChrome(true)
+	elseif IQT.Settings().rxpHideWindow == false then
+		if type(profile) == "table" and profile.hideGuideWindow then
+			profile.hideGuideWindow = false
+			if rxp.v2 and rxp.v2.events and rxp.v2.events.Trigger then
+				pcall(function()
+					rxp.v2.events:Trigger("GuideWindowRefresh", "visibility", true)
+				end)
+			end
 		end
-		if rxp.v2 and rxp.v2.events and rxp.v2.events.Trigger then
-			pcall(function()
-				rxp.v2.events:Trigger("GuideWindowRefresh", "visibility", true)
-			end)
-		end
+		SoftHideRXPChrome(false)
 	end
 end
 
@@ -625,6 +613,40 @@ local function FrameForKind(kind)
 	return _G[KIND_META[kind].frame]
 end
 
+-- Whether any enabled RXP IF module currently has steps to show.
+function IQT.RXPHasTrackerContent()
+	for _, kind in ipairs(KINDS) do
+		if KindEnabled(kind) then
+			local steps = CollectStepsForKind(kind)
+			if type(steps) == "table" and #steps > 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+-- Reveal IF tracker and dirty RXP modules (QuestPeek may have SetAlpha(0)).
+function IQT.EnsureRXPTrackerVisible()
+	local frame = _G.IFObjectiveTrackerFrame
+	if frame then
+		if frame.SetAlpha then
+			frame:SetAlpha(1)
+		end
+		if frame.Show then
+			frame:Show()
+		end
+	end
+	for _, kind in ipairs(KINDS) do
+		local mod = FrameForKind(kind)
+		if mod and mod.MarkDirty then
+			lastSignature[kind] = nil
+			mod:MarkDirty()
+		end
+	end
+	IQT.Refresh()
+end
+
 local function AddStepToModule(self, step, index, idOffset)
 	local blockID = step.stepId or step.index or index
 	if type(blockID) ~= "number" then
@@ -695,6 +717,21 @@ local function EnsureTicker()
 		if hide ~= lastHideBlizzard then
 			lastHideBlizzard = hide
 			DirtyBlizzardQuestModules()
+			if hide then
+				-- Blizzard modules off: make sure IF RestedXP sections lay out and show.
+				IQT.EnsureRXPTrackerVisible()
+			end
+		end
+		-- Keep IF tracker visible while RXP-only (QuestPeek may have zeroed alpha).
+		if hide then
+			local frame = _G.IFObjectiveTrackerFrame
+			if frame and frame.GetAlpha and frame:GetAlpha() < 0.5 then
+				frame:SetAlpha(1)
+			end
+			if frame and frame.IsShown and not frame:IsShown() and IQT.RXPHasTrackerContent() then
+				frame:Show()
+				IQT.EnsureRXPTrackerVisible()
+			end
 		end
 		for _, kind in ipairs(KINDS) do
 			if KindEnabled(kind) then
@@ -836,6 +873,9 @@ function IQT.SetRXPOnly(on)
 	lastHideBlizzard = nil
 	DirtyBlizzardQuestModules()
 	IQT.Refresh()
+	if on then
+		IQT.EnsureRXPTrackerVisible()
+	end
 	IQT.Print("RestedXP only (hide Blizzard quest watches): " .. (on and "on" or "off"))
 end
 
@@ -880,6 +920,10 @@ function IQT.RXPDebug()
 	IQT.Print("Immersion QuestPeek replaces IF tracker: "
 		.. tostring(peek and peek.Replaces and peek.Replaces() or false)
 		.. " (should be false while RXP-only)")
+	local ifFrame = _G.IFObjectiveTrackerFrame
+	IQT.Print("IF tracker shown=" .. tostring(ifFrame and ifFrame.IsShown and ifFrame:IsShown())
+		.. ", alpha=" .. tostring(ifFrame and ifFrame.GetAlpha and ifFrame:GetAlpha())
+		.. ", RXP steps in IF=" .. tostring(IQT.RXPHasTrackerContent()))
 	IQT.Print("Packs loaded: " .. (#det.addons > 0 and table.concat(det.addons, ", ") or "(none of the known folder names)"))
 	for _, kind in ipairs(KINDS) do
 		local meta = KIND_META[kind]
